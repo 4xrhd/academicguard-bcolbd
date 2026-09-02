@@ -1,0 +1,70 @@
+/* frontend/css/skeleton_loading.css | Shimmer skeleton loader animation system */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--ag-card-bg, #1e2230) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    var(--ag-card-bg, #1e2230) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.6s infinite ease-in-out;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.skeleton-text {
+  height: 0.9rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+  height: 1.5rem;
+  width: 50%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-badge {
+  width: 60px;
+  height: 20px;
+  border-radius: 12px;
+}
+
+.skeleton-card {
+  height: 160px;
+  width: 100%;
+  border-radius: 12px;
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Mobile Bottom Sheet Modal Overlay */
+@media (max-width: 768px) {
+  .modal.mobile-bottom-sheet .modal-dialog {
+    margin: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+  }
+
+  .modal.mobile-bottom-sheet .modal-content {
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+  }
+}

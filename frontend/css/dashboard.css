@@ -1,0 +1,334 @@
+/* ==========================================================================
+   AcademicGuard | Dashboard Layout & Widgets (dashboard.css)
+   ========================================================================== */
+
+/* ── Layout Grid ─────────────────────────────────────────────────────────── */
+.dashboard-layout {
+  display: flex;
+  min-height: calc(100vh - var(--ag-nav-h));
+  background: var(--ag-bg);
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.dashboard-grid-layout {
+  display: block;
+  width: 100%;
+}
+
+/* ── Metric Cards Grid ───────────────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 1100px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.custom-metric-card {
+  background: var(--ag-card-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-lg);
+  padding: 1.35rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--ag-shadow-sm);
+  transition: var(--ag-transition-base);
+}
+
+.custom-metric-card:hover {
+  transform: translateY(-3px);
+  border-color: hsla(var(--ag-primary-hsl), 0.35);
+  box-shadow: var(--ag-shadow-md);
+}
+
+/* ── Charts Grid ─────────────────────────────────────────────────────────── */
+.charts-grid-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 960px) {
+  .charts-grid-new {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: var(--ag-card-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--ag-shadow-sm);
+  transition: var(--ag-transition-base);
+}
+
+.chart-card:hover {
+  border-color: hsla(var(--ag-primary-hsl), 0.3);
+  box-shadow: var(--ag-shadow-md);
+}
+
+.chart-card h6 {
+  font-family: var(--ag-font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ag-text);
+  margin-bottom: 1rem;
+  letter-spacing: -0.015em;
+}
+
+/* ── Sentence-Level Perplexity Heatmap (Right Column) ────────────────────── */
+.dashboard-right-col {
+  background: var(--ag-card-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--ag-shadow-sm);
+}
+
+.heatmap-sentence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+
+.heatmap-sentence {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #ffffff;
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--ag-radius-sm);
+  transition: var(--ag-transition-fast);
+  cursor: default;
+  font-weight: 500;
+  box-shadow: var(--ag-shadow-xs);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.heatmap-sentence:hover {
+  transform: translateX(4px);
+  filter: brightness(1.12);
+  box-shadow: var(--ag-shadow-sm);
+}
+
+/* Color tiers matching the AcademicGuard forensics spectrum */
+.heatmap-sentence.tier-green-1 { background: #15803d; color: #ffffff; }
+.heatmap-sentence.tier-green-2 { background: #16a34a; color: #ffffff; }
+.heatmap-sentence.tier-green-3 { background: #22c55e; color: #ffffff; }
+.heatmap-sentence.tier-green-4 { background: #10b981; color: #ffffff; }
+.heatmap-sentence.tier-amber-1 { background: #b45309; color: #ffffff; }
+.heatmap-sentence.tier-amber-2 { background: #d97706; color: #ffffff; }
+.heatmap-sentence.tier-red-1   { background: #b91c1c; color: #ffffff; }
+.heatmap-sentence.tier-red-2   { background: #dc2626; color: #ffffff; }
+.heatmap-sentence.tier-red-3   { background: #ef4444; color: #ffffff; }
+.heatmap-sentence.tier-red-4   { background: #f87171; color: #ffffff; }
+
+/* ── Score Breakdown Grid ────────────────────────────────────────────────── */
+.score-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.score-breakdown-item {
+  background: var(--ag-card-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: var(--ag-shadow-xs);
+  transition: var(--ag-transition-base);
+}
+
+.score-breakdown-item:hover {
+  transform: translateY(-2px);
+  border-color: hsla(var(--ag-primary-hsl), 0.3);
+  box-shadow: var(--ag-shadow-sm);
+}
+
+.score-breakdown-item .label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ag-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.score-breakdown-item .value {
+  font-family: var(--ag-font-heading);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--ag-text);
+  letter-spacing: -0.02em;
+}
+
+.score-breakdown-item.marks-tile {
+  border-color: hsla(var(--ag-primary-hsl), 0.3);
+  background: var(--ag-primary-soft) !important;
+}
+
+.score-breakdown-item.marks-tile .value {
+  color: var(--ag-primary) !important;
+}
+
+/* ── Heatmap & Matrix Container Styling ──────────────────────────────────── */
+#heatmap-container {
+  background: var(--ag-card-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-lg);
+  padding: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: var(--ag-shadow-xs);
+}
+
+#heatmap-container svg {
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  font-family: var(--ag-font-body), system-ui, sans-serif;
+}
+
+.heatmap-cell {
+  rx: 6px;
+  ry: 6px;
+  transition: transform 0.15s ease, filter 0.15s ease, stroke 0.15s ease;
+  cursor: pointer;
+}
+
+.heatmap-cell:hover {
+  filter: brightness(1.15);
+  stroke-width: 2px;
+}
+
+.heatmap-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  fill: var(--ag-text-muted);
+  user-select: none;
+}
+
+/* ── Diff Container & Code Panes ─────────────────────────────────────────── */
+.diff-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .diff-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diff-header {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ag-text);
+  margin-bottom: 0.5rem;
+}
+
+.diff-pane {
+  background: var(--ag-bg);
+  border: 1px solid var(--ag-border);
+  border-radius: var(--ag-radius-md);
+  padding: 1.15rem;
+  font-size: 0.875rem;
+  font-family: var(--ag-font-mono), monospace;
+  line-height: 1.65;
+  max-height: 440px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ag-text);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.diff-pane mark, .diff-pane .diff-match {
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-weight: 600;
+  border-bottom: 2px solid #f59e0b;
+}
+
+.diff-pane ins, .diff-pane .diff-insert {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+.diff-pane del, .diff-pane .diff-delete {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  text-decoration: line-through;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+/* ── Risk Badges & Status Pills ──────────────────────────────────────────── */
+.badge-risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--ag-radius-full);
+  text-transform: uppercase;
+}
+
+.badge-risk-low, .badge-risk-authentic_human {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-risk-medium, .badge-risk-paraphrased_ai {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-risk-high, .badge-risk-generated_ai {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+

@@ -1,0 +1,9 @@
+{
+  "site_package_search_strategy": "all",
+  "source_directories": ["app"],
+  "search_path": [],
+  "excludes": ["venv"],
+  "ignore_all_errors": false,
+  "python_version": "3.11",
+  "virtual_environment": "/home/tr/Desktop/AcademicGuard_AI/backend/venv"
+}

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Manage users and system settings | AcademicGuard admin panel."/>
+  <title>Admin Panel | AcademicGuard</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/icons.css">
+  <link rel="stylesheet" href="/css/main.css"/>
+  <link rel="stylesheet" href="/css/dashboard.css"/>
+  <script>
+    (function() {
+      const t = localStorage.getItem('ag-theme') || localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+  <style>
+    .admin-tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--ag-border) !important;
+      padding-bottom: 0.75rem;
+    }
+    .admin-tabs .nav-link {
+      color: var(--ag-text-muted);
+      border: 1px solid transparent;
+      border-radius: var(--ag-radius);
+      padding: 0.65rem 1.25rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      background: transparent;
+    }
+    .admin-tabs .nav-link:hover {
+      color: var(--ag-primary);
+      background: var(--ag-surface);
+    }
+    .admin-tabs .nav-link.active {
+      color: var(--ag-primary);
+      background: var(--ag-primary-soft);
+      border-color: hsla(var(--ag-primary-hsl), 0.3);
+      box-shadow: var(--ag-shadow-sm);
+    }
+    .audit-log-row {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--ag-border);
+      transition: background 0.2s ease;
+    }
+    .audit-log-row:hover {
+      background: var(--ag-surface);
+    }
+  </style>
+</head>
+<body data-page="admin" class="animate-fade-in">
+
+<!-- Navbar -->
+<nav class="navbar navbar-ag px-4 d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center gap-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-logo">
+        <i class="ag-icon ag-shield-check"></i>
+      </div>
+      <a href="/pages/dashboard.html" class="navbar-brand text-decoration-none">
+        AcademicGuard
+      </a>
+    </div>
+
+    <!-- Center Nav Tabs -->
+    <div class="top-nav-tabs d-none d-md-flex align-items-center gap-1 ms-2">
+      <a href="/pages/dashboard.html" class="top-nav-tab">
+        <i class="ag-icon ag-house-door"></i> Dashboard
+      </a>
+      <a href="/pages/results.html" class="top-nav-tab">
+        <i class="ag-icon ag-file-earmark-text"></i> Reports
+      </a>
+      <a href="/pages/settings.html" class="top-nav-tab">
+        <i class="ag-icon ag-gear"></i> Settings
+      </a>
+      <a href="javascript:void(0)" class="top-nav-tab" onclick="UI.showToast('AcademicGuard | Enterprise Integrity Platform', 'info')">
+        <i class="ag-icon ag-question-circle"></i> Support
+      </a>
+    </div>
+  </div>
+
+  <div class="navbar-actions d-flex align-items-center gap-3">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <i class="ag-icon ag-moon-fill" id="theme-icon"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-link text-muted p-0 d-none d-sm-block position-relative" title="Notifications" aria-label="Notifications" onclick="UI.showToast('All analysis systems operating normally.', 'success')">
+      <i class="ag-icon ag-bell fs-5"></i>
+    </button>
+    
+    <!-- User Dropdown with Role and Sign Out -->
+    <div class="dropdown">
+      <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+        <div class="user-avatar-small rounded-circle d-flex align-items-center justify-content-center fw-bold" id="user-avatar-initials" style="width: 36px; height: 36px; background: var(--ag-primary-soft); color: var(--ag-primary); font-size: 0.9rem;">
+          <i class="ag-icon ag-person-fill"></i>
+        </div>
+        <div class="d-none d-lg-block text-start">
+          <div class="fw-semibold text-truncate" id="nav-username" style="max-width: 140px; font-size: 0.85rem;">User</div>
+          <span class="badge bg-warning bg-opacity-25 text-warning" id="nav-userrole" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Administrator</span>
+        </div>
+        <i class="ag-icon ag-chevron-down text-muted small ms-1"></i>
+      </div>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary border-opacity-25 mt-2" style="background: var(--ag-card-bg); min-width: 210px; z-index: 1050;">
+        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+          <div class="fw-bold text-truncate" id="dropdown-user-name">Loading...</div>
+          <div class="small text-muted" id="dropdown-user-role">Role</div>
+        </li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/dashboard.html"><i class="ag-icon ag-grid-1x2"></i> Dashboard</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/results.html"><i class="ag-icon ag-bar-chart-steps"></i> All Batches</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/settings.html"><i class="ag-icon ag-gear"></i> Settings</a></li>
+        <li id="dropdown-admin-item"><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning fw-semibold" href="/pages/admin.html"><i class="ag-icon ag-shield-lock-fill"></i> Admin Panel (RBAC)</a></li>
+        <li><hr class="dropdown-divider my-1 border-secondary border-opacity-25"></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="ag-icon ag-box-arrow-right"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Toggle -->
+<button class="sidebar-toggle d-lg-none" id="sidebar-toggle" aria-label="Toggle menu">
+  <i class="ag-icon ag-list"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Layout -->
+<div class="dashboard-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <!-- User Profile Section -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <div class="user-avatar" id="sidebar-avatar">AG</div>
+        <span class="user-status-dot" title="Active"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">Admin</div>
+        <span class="user-role-badge admin" id="sidebar-role-badge">Administrator</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/pages/dashboard.html" data-tooltip="Dashboard">
+          <i class="ag-icon ag-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="/pages/upload.html" data-tooltip="New Analysis">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+        <a class="nav-link" href="/pages/results.html" data-tooltip="All Batches">
+          <i class="ag-icon ag-bar-chart-steps"></i>
+          <span>All Batches</span>
+        </a>
+        <a class="nav-link" href="/pages/training.html" data-tooltip="Model Training">
+          <i class="ag-icon ag-cpu"></i>
+          <span>Model Training</span>
+        </a>
+        <a class="nav-link" href="/pages/annotate.html" data-tooltip="Annotate Submissions">
+          <i class="ag-icon ag-pencil-square"></i>
+          <span>Annotate Submissions</span>
+        </a>
+        <a class="nav-link" href="/pages/settings.html" data-tooltip="Settings">
+          <i class="ag-icon ag-gear"></i>
+          <span>Settings</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link active" href="/pages/admin.html" id="sidebar-admin-link" data-tooltip="User Management (RBAC)">
+          <i class="ag-icon ag-people-fill"></i>
+          <span>User Management</span>
+          <span class="nav-badge">Admin</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="sidebar-actions">
+      <a href="/pages/upload.html" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="ag-icon ag-plus-lg"></i>
+        <span>New Analysis</span>
+      </a>
+    </div>
+
+    <!-- Help Card -->
+    <div class="sidebar-help">
+      <div class="help-card">
+        <i class="ag-icon ag-shield-check"></i>
+        <div class="help-content">
+          <p class="help-title">AcademicGuard</p>
+          <p class="help-link">Admin Security</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="logout()" title="Sign Out">
+        <i class="ag-icon ag-box-arrow-right"></i>
+        <span class="btn-logout-text">Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="dashboard-main">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+      <div>
+        <h2 class="fw-bold d-flex align-items-center gap-2 mb-1">
+          <i class="ag-icon ag-shield-lock-fill text-warning fs-3"></i>
+          <span>Role-Based Access Control (RBAC) &amp; Audit Log Centre</span>
+        </h2>
+        <p class="text-muted mb-0">Manage instructor user accounts, role permissions, and immutable system security audit logs.</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav admin-tabs mb-4 border-0" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel" type="button" role="tab">
+          <i class="ag-icon ag-people me-2"></i>Instructor Accounts
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-panel" type="button" role="tab">
+          <i class="ag-icon ag-file-text me-2"></i>Security Audit Logs
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content">
+      <!-- Users Tab -->
+      <div class="tab-pane fade show active" id="users-panel" role="tabpanel">
+        <div class="ag-card glass-panel shadow-sm p-0 overflow-hidden" style="background: var(--ag-card-bg); border: 1px solid var(--ag-border); border-radius: var(--ag-radius-lg);">
+          <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3" style="border-color: var(--ag-border) !important;">
+            <div>
+              <h5 class="mb-1 fw-bold text-body d-flex align-items-center gap-2">
+                <i class="ag-icon ag-people text-primary"></i>
+                <span>Registered Instructor Accounts</span>
+              </h5>
+              <p class="text-muted small mb-0">Inspect user credentials, update roles, or manage active system status.</p>
+            </div>
+            <div class="w-100-mobile" style="min-width: 260px; max-width: 360px;">
+              <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="ag-icon ag-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" id="user-search" placeholder="Search email or name…">
+              </div>
+            </div>
+          </div>
+
+          <!-- Users table -->
+          <div class="table-responsive">
+            <table class="table ag-table align-middle mb-0" style="color: var(--ag-text);">
+              <thead>
+                <tr class="text-muted small" style="border-bottom: 1px solid var(--ag-border);">
+                  <th style="padding: 0.85rem 1rem;">NAME</th>
+                  <th style="padding: 0.85rem 1rem;">EMAIL</th>
+                  <th style="padding: 0.85rem 1rem;">ROLE</th>
+                  <th style="padding: 0.85rem 1rem;">STATUS</th>
+                  <th style="padding: 0.85rem 1rem;">JOINED</th>
+                  <th class="text-end" style="padding: 0.85rem 1rem;">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr>
+                  <td colspan="6" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit Logs Tab -->
+      <div class="tab-pane fade" id="audit-panel" role="tabpanel">
+        <div class="ag-card glass-panel shadow-sm p-0 overflow-hidden" style="background: var(--ag-card-bg); border: 1px solid var(--ag-border); border-radius: var(--ag-radius-lg);">
+          <div class="p-4 border-bottom" style="border-color: var(--ag-border) !important;">
+            <div class="row g-3 align-items-end">
+              <div class="col-lg-4 col-md-6 col-12">
+                <label class="form-label small fw-bold text-muted">Filter by Action</label>
+                <select class="form-select" aria-label="Select an option" id="audit-action-filter">
+                  <option value="">All Actions</option>
+                  <option value="auth.login">Login</option>
+                  <option value="batch.upload">Batch Upload</option>
+                  <option value="batch.delete">Batch Delete</option>
+                  <option value="user.deactivate">User Deactivate</option>
+                </select>
+              </div>
+              <div class="col-lg-4 col-md-6 col-12">
+                <label class="form-label small fw-bold text-muted">Filter by User Email</label>
+                <input type="text" class="form-control" id="audit-user-filter" placeholder="e.g. instructor@academicguard.ai">
+              </div>
+              <div class="col-lg-4 col-md-12 col-12">
+                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="loadAuditLogs()">
+                  <i class="ag-icon ag-funnel"></i>
+                  <span>Apply Audit Filters</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit logs list -->
+          <div id="audit-logs-container">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Deactivate User Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content glass-panel border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Deactivate User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <p class="text-muted">Are you sure you want to deactivate <strong id="deactivate-user-name"></strong>?</p>
+        <p class="small text-danger mb-0"><i class="ag-icon ag-exclamation-triangle me-2"></i>This action will prevent the user from logging in.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-deactivate-btn">Deactivate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reactivate User Modal -->
+<div class="modal fade" id="reactivateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content glass-panel border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Reactivate User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <p class="text-muted">Are you sure you want to reactivate <strong id="reactivate-user-name"></strong>?</p>
+        <p class="small text-success mb-0"><i class="ag-icon ag-check-circle me-2"></i>The user will regain login access immediately.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="confirm-reactivate-btn">Reactivate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content glass-panel border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger"><i class="ag-icon ag-trash me-2"></i>Delete User Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="alert alert-danger mb-3">
+            <i class="ag-icon ag-exclamation-octagon-fill me-2"></i>
+            <strong>WARNING: EXTREME DANGER</strong>
+        </div>
+        <p class="text-muted">Are you absolutely sure you want to permanently delete <strong id="delete-user-name"></strong>?</p>
+        <p class="small text-danger fw-bold mb-0">This operation cannot be undone. All database records linked to this instructor account will also be deleted.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-btn">Permanently Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

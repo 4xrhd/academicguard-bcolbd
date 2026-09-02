@@ -1,0 +1,89 @@
+# docker-compose.yml — AcademicGuard local development stack
+# Start with: docker compose up -d --build
+
+version: "3.9"
+
+services:
+
+  # ── Static frontend (localhost dev) ────────────────────────────────────────
+  frontend:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - ag-net
+
+  # ── FastAPI application ────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      REDIS_URL: "redis://redis:6379/0"
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+      - exports:/app/exports
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - ag-net
+
+  # ── PostgreSQL 15 database ─────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-academicguard}
+      POSTGRES_USER: ${POSTGRES_USER:-academicguard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CHANGE_ME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-academicguard} -d ${POSTGRES_DB:-academicguard}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ag-net
+
+  # ── Redis (available for local tooling and future app integration) ─────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    networks:
+      - ag-net
+
+networks:
+  ag-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  uploads:
+  exports:
+  redisdata:

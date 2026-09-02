@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Detailed per-student risk breakdown, AI detection scores, and similarity analysis."/>
+  <title>Student Detail | AcademicGuard</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/icons.css">
+    <link rel="stylesheet" href="/css/main.css"/>
+  <link rel="stylesheet" href="/css/dashboard.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const t = localStorage.getItem('ag-theme') || localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+  <style>
+    /* Diff pane scrollable */
+    .diff-pane {
+      background: var(--ag-bg);
+      border: 1px solid var(--ag-border);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.95rem;
+      font-family: 'Inter', system-ui, -apple-system, monospace;
+      line-height: 1.7;
+      max-height: 420px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--ag-text);
+    }
+
+    /* Marks breakdown grid */
+    .marks-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .marks-breakdown-item {
+      background: var(--ag-bg);
+      border: 1px solid var(--ag-border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .marks-breakdown-item .deduct-label {
+      font-size: 0.85rem;
+      color: var(--ag-text-muted);
+    }
+ 
+    .marks-breakdown-item .deduct-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ag-danger);
+    }
+ 
+    .marks-breakdown-item .deduct-value.zero {
+      color: var(--ag-success);
+    }
+ 
+    /* Marks score tile — highlight */
+    .score-breakdown-item.marks-tile {
+      border-color: hsla(var(--ag-primary-hsl), 0.3);
+      background: var(--ag-primary-soft) !important;
+    }
+ 
+    .score-breakdown-item.marks-tile .value {
+      color: var(--ag-primary) !important;
+    }
+ 
+    /* Pairs table name helper */
+    .peer-name {
+      font-size: 0.8rem;
+      color: var(--ag-text-muted);
+      display: block;
+    }
+
+    /* Active pair row */
+    #pairs-table-body tr.table-active td {
+      background: var(--ag-primary-soft) !important;
+      color: var(--ag-primary) !important;
+      border-color: hsla(var(--ag-primary-hsl), 0.2) !important;
+    }
+
+    /* Advisory banner */
+    .disclaimer-banner {
+      border-radius: 14px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    /* ── Comparison tab nav ─────────────────────────────────────────────── */
+    .comparison-tabs .nav-link {
+      border: 1px solid var(--ag-border);
+      border-radius: 10px;
+      color: var(--ag-text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.45rem 1rem;
+      margin-right: 0.4rem;
+      transition: all 0.2s;
+    }
+    .comparison-tabs .nav-link:hover {
+      background: var(--ag-primary-soft);
+      color: var(--ag-primary);
+      border-color: hsla(var(--ag-primary-hsl), 0.3);
+    }
+    .comparison-tabs .nav-link.active {
+      background: var(--ag-primary);
+      color: #fff;
+      border-color: var(--ag-primary);
+    }
+
+    /* ── PDF viewer ─────────────────────────────────────────────────────── */
+    .pdf-compare-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .pdf-compare-container { grid-template-columns: 1fr; }
+    }
+
+    .pdf-pane-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .pdf-pane-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .pdf-pane-toolbar .pdf-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ag-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .pdf-iframe {
+      width: 100%;
+      height: 560px;
+      border: 1px solid var(--ag-border);
+      border-radius: 12px;
+      background: var(--ag-bg);
+      transition: border-color 0.2s;
+    }
+    .pdf-iframe:focus { outline: none; border-color: var(--ag-primary); }
+
+    /* Fullscreen expanded state */
+    .pdf-iframe.expanded {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      z-index: 9999;
+    }
+
+    /* Placeholder overlay when no pair selected */
+    .pdf-placeholder {
+      height: 560px;
+      border: 2px dashed var(--ag-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--ag-text-muted);
+      gap: 0.75rem;
+      background: var(--ag-bg);
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+    .pdf-placeholder i { font-size: 3rem; opacity: 0.3; }
+  </style>
+</head>
+<body data-page="student-detail" class="animate-fade-in">
+
+<!-- Navbar -->
+<nav class="navbar navbar-ag px-4 d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center gap-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-logo">
+        <i class="ag-icon ag-shield-check"></i>
+      </div>
+      <a href="/pages/dashboard.html" class="navbar-brand text-decoration-none">
+        AcademicGuard
+      </a>
+    </div>
+
+    <!-- Center Nav Tabs -->
+    <div class="top-nav-tabs d-none d-md-flex align-items-center gap-1 ms-2">
+      <a href="/pages/dashboard.html" class="top-nav-tab">
+        <i class="ag-icon ag-house-door"></i> Dashboard
+      </a>
+      <a href="/pages/results.html" class="top-nav-tab active">
+        <i class="ag-icon ag-file-earmark-text"></i> Reports
+      </a>
+      <a href="/pages/settings.html" class="top-nav-tab">
+        <i class="ag-icon ag-gear"></i> Settings
+      </a>
+      <a href="javascript:void(0)" class="top-nav-tab" onclick="UI.showToast('AcademicGuard | Enterprise Integrity Platform', 'info')">
+        <i class="ag-icon ag-question-circle"></i> Support
+      </a>
+    </div>
+  </div>
+
+  <div class="navbar-actions d-flex align-items-center gap-3">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <i class="ag-icon ag-moon-fill" id="theme-icon"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-link text-muted p-0 d-none d-sm-block position-relative" title="Notifications" aria-label="Notifications" onclick="UI.showToast('All analysis systems operating normally.', 'success')">
+      <i class="ag-icon ag-bell fs-5"></i>
+    </button>
+    
+    <!-- User Dropdown with Role and Sign Out -->
+    <div class="dropdown">
+      <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+        <div class="user-avatar-small rounded-circle d-flex align-items-center justify-content-center fw-bold" id="user-avatar-initials" style="width: 36px; height: 36px; background: var(--ag-primary-soft); color: var(--ag-primary); font-size: 0.9rem;">
+          <i class="ag-icon ag-person-fill"></i>
+        </div>
+        <div class="d-none d-lg-block text-start">
+          <div class="fw-semibold text-truncate" id="nav-username" style="max-width: 140px; font-size: 0.85rem;">User</div>
+          <span class="badge bg-primary bg-opacity-10 text-primary" id="nav-userrole" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Instructor</span>
+        </div>
+        <i class="ag-icon ag-chevron-down text-muted small ms-1"></i>
+      </div>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary border-opacity-25 mt-2" style="background: var(--ag-card-bg); min-width: 210px; z-index: 1050;">
+        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+          <div class="fw-bold text-truncate" id="dropdown-user-name">Loading...</div>
+          <div class="small text-muted" id="dropdown-user-role">Role</div>
+        </li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/dashboard.html"><i class="ag-icon ag-grid-1x2"></i> Dashboard</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/results.html"><i class="ag-icon ag-bar-chart-steps"></i> All Batches</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/settings.html"><i class="ag-icon ag-gear"></i> Settings</a></li>
+        <li id="dropdown-admin-item" style="display: none;"><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning fw-semibold" href="/pages/admin.html"><i class="ag-icon ag-shield-lock-fill"></i> Admin Panel (RBAC)</a></li>
+        <li><hr class="dropdown-divider my-1 border-secondary border-opacity-25"></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="ag-icon ag-box-arrow-right"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Toggle -->
+<button class="sidebar-toggle d-lg-none" id="sidebar-toggle" aria-label="Toggle menu">
+  <i class="ag-icon ag-list"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="dashboard-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <!-- User Profile Section -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <div class="user-avatar" id="sidebar-avatar">AG</div>
+        <span class="user-status-dot" title="Active"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">User</div>
+        <span class="user-role-badge instructor" id="sidebar-role-badge">Instructor</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/pages/dashboard.html" data-tooltip="Dashboard">
+          <i class="ag-icon ag-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="/pages/upload.html" data-tooltip="New Analysis">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+        <a class="nav-link" href="/pages/results.html" data-tooltip="All Batches">
+          <i class="ag-icon ag-bar-chart-steps"></i>
+          <span>All Batches</span>
+        </a>
+        <a class="nav-link" href="/pages/training.html" data-tooltip="Model Training">
+          <i class="ag-icon ag-cpu"></i>
+          <span>Model Training</span>
+        </a>
+        <a class="nav-link" href="/pages/annotate.html" data-tooltip="Annotate Submissions">
+          <i class="ag-icon ag-pencil-square"></i>
+          <span>Annotate Submissions</span>
+        </a>
+        <a class="nav-link" href="/pages/settings.html" data-tooltip="Settings">
+          <i class="ag-icon ag-gear"></i>
+          <span>Settings</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link" href="javascript:void(0)" onclick="history.back()" data-tooltip="Back to Batch">
+          <i class="ag-icon ag-arrow-left-circle"></i>
+          <span>Back to Batch</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link" href="/pages/admin.html" id="sidebar-admin-link" data-tooltip="User Management (RBAC)" style="display: none;">
+          <i class="ag-icon ag-people-fill"></i>
+          <span>User Management</span>
+          <span class="nav-badge">Admin</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="sidebar-actions">
+      <a href="/pages/upload.html" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="ag-icon ag-plus-lg"></i>
+        <span>New Analysis</span>
+      </a>
+    </div>
+
+    <!-- Help Card -->
+    <div class="sidebar-help">
+      <div class="help-card">
+        <i class="ag-icon ag-shield-check"></i>
+        <div class="help-content">
+          <p class="help-title">AcademicGuard</p>
+          <p class="help-link">Integrity Platform</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="logout()" title="Sign Out">
+        <i class="ag-icon ag-box-arrow-right"></i>
+        <span class="btn-logout-text">Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+    <div id="error-message" class="alert alert-danger" style="display:none; margin: 1rem;"></div>
+
+    <div id="detail-content">
+      <!-- Back to Batch Results Button -->
+      <div class="mb-3">
+        <a href="/pages/results.html" id="back-to-batch-link" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
+          <i class="ag-icon ag-arrow-left"></i> Back to Batch Results
+        </a>
+      </div>
+
+      <!-- Advisory banner -->
+      <div class="disclaimer-banner mb-4 glass-panel d-flex align-items-center p-3">
+        <div class="bg-warning bg-opacity-10 p-2 rounded-3 me-3 text-warning">
+          <i class="ag-icon ag-info-circle-fill"></i>
+        </div>
+        <div>
+          <h6 class="mb-0 fw-bold">Advisory Only</h6>
+          <p class="mb-0 small op-80">Risk scores are statistical indicators and do not constitute evidence of academic misconduct.</p>
+        </div>
+      </div>
+
+      <!-- Student header -->
+      <div class="page-header align-items-center">
+        <div class="d-flex align-items-center gap-3">
+          <div class="p-3 bg-primary bg-opacity-10 rounded-3 text-primary">
+            <i class="ag-icon ag-person-circle fs-3"></i>
+          </div>
+          <div>
+            <h2 id="student-name" class="mb-0">—</h2>
+            <p class="mb-0">
+              Student ID: <span id="student-id" class="fw-semibold">—</span> &bull; 
+              Batch: <span id="batch-ref" class="fw-semibold">—</span>
+            </p>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-2 shadow-sm" id="btn-download-originality-pdf" title="Download Enterprise-grade Originality Report">
+            <i class="ag-icon ag-file-earmark-check-fill"></i>
+            <span>Download Originality Report (PDF)</span>
+          </button>
+          <button class="btn btn-outline-primary btn-sm px-3 d-flex align-items-center gap-2" id="btn-view-pdf" title="View Student's Uploaded PDF">
+            <i class="ag-icon ag-file-earmark-pdf"></i>
+            <span>View Original PDF</span>
+          </button>
+          <span class="badge-risk fs-6" id="risk-badge" style="padding: 0.25rem 0.75rem">LOW</span>
+        </div>
+      </div>
+
+      <!-- FR-DASH-04 Score breakdown tiles -->
+      <div class="score-breakdown mb-4" id="score-tiles">
+        <div class="score-breakdown-item">
+          <div class="value text-danger" id="weighted-score"><div class="skeleton-loader" style="height: 32px; width: 64px; margin: 0 auto; border-radius: 6px;"></div></div>
+          <div class="label">Weighted Risk Score</div>
+          <div id="weight-profile-badge" style="display: inline-block;"></div>
+        </div>
+        <div class="score-breakdown-item">
+          <div class="value text-warning" id="ai-prob"><div class="skeleton-loader" style="height: 32px; width: 64px; margin: 0 auto; border-radius: 6px;"></div></div>
+          <div class="label">AI Probability</div>
+        </div>
+        <div class="score-breakdown-item">
+          <div class="value text-primary" id="text-sim"><div class="skeleton-loader" style="height: 32px; width: 64px; margin: 0 auto; border-radius: 6px;"></div></div>
+          <div class="label">Max Text Similarity</div>
+        </div>
+        <div class="score-breakdown-item">
+          <div class="value text-info" id="code-sim"><div class="skeleton-loader" style="height: 32px; width: 64px; margin: 0 auto; border-radius: 6px;"></div></div>
+          <div class="label">Max Code Similarity</div>
+        </div>
+        <!-- FR-MARK-02: Marks tile — shown only if marking is configured -->
+        <div class="score-breakdown-item marks-tile" id="marks-tile" style="display:none">
+          <div class="value" id="marks-obtained"><div class="skeleton-loader" style="height: 32px; width: 64px; margin: 0 auto; border-radius: 6px;"></div></div>
+          <div class="label">Marks Obtained</div>
+          <div class="small mt-1" id="marks-total-label" style="color: var(--ag-text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- FR-MARK-02: Marks Breakdown card (shown only when marking config exists) -->
+      <div class="ag-card mb-4" id="marks-breakdown-card" style="display:none">
+        <div class="ag-card-header d-flex align-items-center gap-2">
+          <i class="ag-icon ag-calculator text-primary"></i>
+          Marks Breakdown
+        </div>
+        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+          <span class="text-muted small">Deductions applied per detection feature</span>
+          <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 fw-bold">
+            Final: <span id="marks-final-badge">—</span>
+          </span>
+        </div>
+        <div class="marks-breakdown-grid" id="marks-breakdown-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Visual Analytics & Integrity Radar (FR-DASH-04 / AI & Similarity Graph) -->
+      <div class="row g-4 mb-4" id="visual-analytics-section">
+        <!-- AI vs Human Content Donut -->
+        <div class="col-lg-4 col-md-12">
+          <div class="ag-card h-100 p-3 d-flex flex-column">
+            <div class="ag-card-header d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+              <span class="d-flex align-items-center gap-2 fw-bold">
+                <i class="ag-icon ag-cpu text-warning"></i> AI vs Human Content
+              </span>
+              <span class="badge bg-warning bg-opacity-10 text-warning small" id="sub-ai-confidence-pill">GPT-2 / Stylometry</span>
+            </div>
+            
+            <div class="position-relative d-flex align-items-center justify-content-center my-3" style="height: 180px;">
+              <canvas id="sub-ai-donut-chart"></canvas>
+              <div class="position-absolute text-center" style="pointer-events: none; z-index: 5;">
+                <div class="fs-3 fw-bold" id="sub-ai-center-val"></div>
+                <div class="small text-muted" style="font-size: 0.75rem;">AI Likelihood</div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-around text-center pt-2 mt-auto border-top border-secondary border-opacity-25">
+              <div>
+                <div class="d-flex align-items-center gap-1 small text-muted">
+                  <span class="rounded-circle" style="width: 10px; height: 10px; background: #f43f5e; display: inline-block;"></span> AI Generated
+                </div>
+                <div class="fw-bold mt-1 text-danger" id="sub-ai-legend-val"><div class="skeleton-loader" style="height: 18px; width: 40px; margin: 0 auto; border-radius: 4px;"></div></div>
+              </div>
+              <div class="vr opacity-25"></div>
+              <div>
+                <div class="d-flex align-items-center gap-1 small text-muted">
+                  <span class="rounded-circle" style="width: 10px; height: 10px; background: #10b981; display: inline-block;"></span> Human Authored
+                </div>
+                <div class="fw-bold mt-1 text-success" id="sub-human-legend-val"><div class="skeleton-loader" style="height: 18px; width: 40px; margin: 0 auto; border-radius: 4px;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-Factor Integrity Spectrum Bar Chart -->
+        <div class="col-lg-8 col-md-12">
+          <div class="ag-card h-100 p-3 d-flex flex-column">
+            <div class="ag-card-header d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+              <span class="d-flex align-items-center gap-2 fw-bold text-body">
+                <i class="ag-icon ag-bar-chart-line-fill text-primary fs-5"></i> Multi-Factor Integrity & Risk Spectrum
+              </span>
+              <div class="d-flex gap-2">
+                <span class="badge bg-success bg-opacity-10 text-success small">Low &lt;35%</span>
+                <span class="badge bg-warning bg-opacity-10 text-warning small">Med 35-70%</span>
+                <span class="badge bg-danger bg-opacity-10 text-danger small">High &gt;70%</span>
+              </div>
+            </div>
+
+            <div class="flex-grow-1 position-relative" style="min-height: 220px;">
+              <canvas id="sub-risk-bar-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Peer Similarity Distribution Chart (Shown when peer pairs exist) -->
+      <div class="ag-card mb-4 p-3" id="sub-peer-matches-card" style="display: none;">
+        <div class="ag-card-header d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+          <span class="d-flex align-items-center gap-2 fw-bold">
+            <i class="ag-icon ag-people-fill text-info"></i> Top Similar Peer Submissions (Text vs Code AST)
+          </span>
+          <small class="text-muted">Direct pairwise similarity comparison</small>
+        </div>
+        <div class="position-relative" style="height: 180px;">
+          <canvas id="sub-peer-bar-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- AI Detection breakdown -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header d-flex align-items-center gap-2">
+          <i class="ag-icon ag-cpu text-warning"></i>
+          AI Detection Details
+        </div>
+        <div class="row g-3 text-center">
+          <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Perplexity Score</div>
+            <div class="fw-bold fs-5" id="perplexity">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Burstiness</div>
+            <div class="fw-bold fs-5" id="burstiness">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Stylometric Score</div>
+            <div class="fw-bold fs-5" id="stylometric">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Detection Source</div>
+            <div class="fw-bold fs-5" id="ai-source">—</div>
+          </div>
+        </div>
+        <!-- API score row — only if present -->
+        <div id="api-score-row" class="mt-3 pt-3 border-top text-center" style="display:none">
+          <div class="small text-muted mb-1">GPTZero API Score</div>
+          <div class="fw-bold fs-5" id="api-score">—</div>
+        </div>
+      </div>
+
+      <!-- Similarity pairs table -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header d-flex align-items-center justify-content-between">
+          <span class="d-flex align-items-center gap-2">
+            <i class="ag-icon ag-arrow-left-right text-primary"></i>
+            Similarity Pairs
+          </span>
+          <small class="text-muted">Click a row to compare submissions</small>
+        </div>
+        <div class="table-responsive">
+          <table class="table ag-table mb-0" aria-label="Submission Pairwise Comparisons Table">
+            <thead>
+              <tr>
+                <th>Compared With</th>
+                <th>Text (TF-IDF)</th>
+                <th>Text (Semantic)</th>
+                <th>Text (Fused)</th>
+                <th>Code (AST)</th>
+                <th>Direction</th>
+              </tr>
+            </thead>
+            <tbody id="pairs-table-body">
+              <tr>
+                <td><div class="skeleton-loader" style="height: 20px; width: 120px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 40px; border-radius: 4px;"></div></td>
+              </tr>
+              <tr>
+                <td><div class="skeleton-loader" style="height: 20px; width: 120px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 60px; border-radius: 4px;"></div></td>
+                <td><div class="skeleton-loader" style="height: 20px; width: 40px; border-radius: 4px;"></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="no-pairs-msg" class="text-center text-muted py-4 small" style="display:none">
+            <i class="ag-icon ag-check-circle-fill text-success fs-4 d-block mb-2"></i>
+            No significant similarity pairs detected.
+          </div>
+        </div>
+      </div>
+
+      <!-- FR-DASH-04 Comparison card — tabbed: Text Diff + PDF Comparison -->
+      <div class="ag-card mb-4" id="diff-card">
+
+        <!-- Card header with tab switcher and pair label -->
+        <div class="ag-card-header d-flex align-items-center gap-3 flex-wrap pb-0 border-0 mb-0">
+          <ul class="nav comparison-tabs" id="comparisonTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-text-btn" data-bs-toggle="tab"
+                      data-bs-target="#tab-text" type="button" role="tab"
+                      aria-controls="tab-text" aria-selected="true">
+                <i class="ag-icon ag-file-diff me-1"></i>Text Diff
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-pdf-btn" data-bs-toggle="tab"
+                      data-bs-target="#tab-pdf" type="button" role="tab"
+                      aria-controls="tab-pdf" aria-selected="false">
+                <i class="ag-icon ag-file-earmark-pdf me-1"></i>PDF Comparison
+              </button>
+            </li>
+          </ul>
+          <span class="ms-auto badge bg-secondary bg-opacity-10 text-secondary small" id="diff-pair-label">Select a pair above</span>
+        </div>
+
+        <!-- Divider -->
+        <hr class="mt-3 mb-3" style="border-color: var(--ag-border)">
+
+        <div class="tab-content" id="comparisonTabContent">
+
+          <!-- ── TAB 1: Text Diff ─────────────────────────────────────── -->
+          <div class="tab-pane fade show active" id="tab-text" role="tabpanel" aria-labelledby="tab-text-btn">
+            <div class="diff-container">
+              <div>
+                <div class="diff-header d-flex align-items-center gap-2 mb-2">
+                  <i class="ag-icon ag-person-fill text-primary"></i>
+                  <span id="diff-label-a">This Student's Submission</span>
+                </div>
+                <div class="diff-pane" id="diff-text-a">
+                  <span class="text-muted">Select a similarity pair above to view diff.</span>
+                </div>
+              </div>
+              <div>
+                <div class="diff-header d-flex align-items-center gap-2 mb-2">
+                  <i class="ag-icon ag-person-fill text-danger"></i>
+                  <span id="diff-label-b">Compared Student's Submission</span>
+                </div>
+                <div class="diff-pane" id="diff-text-b"></div>
+              </div>
+            </div>
+            <div class="d-flex gap-3 mt-3 flex-wrap">
+              <span class="d-flex align-items-center gap-1 x-small text-muted">
+                <mark class="px-1 rounded">Highlighted</mark> = matching/suspicious text
+              </span>
+              <span class="d-flex align-items-center gap-1 x-small text-muted">
+                Unmarked = unique to each submission
+              </span>
+            </div>
+          </div>
+
+          <!-- ── TAB 2: PDF Comparison ────────────────────────────────── -->
+          <div class="tab-pane fade" id="tab-pdf" role="tabpanel" aria-labelledby="tab-pdf-btn">
+
+            <!-- Placeholder: shown until a pair is selected -->
+            <div id="pdf-placeholder" class="pdf-placeholder">
+              <i class="ag-icon ag-file-earmark-pdf"></i>
+              <span>Select a similarity pair above to compare PDFs</span>
+              <span class="x-small">Both original submissions will be displayed side by side</span>
+            </div>
+
+            <!-- PDF viewer: hidden until a pair is selected -->
+            <div id="pdf-viewer" class="pdf-compare-container" style="display:none">
+
+              <!-- Left PDF: current student -->
+              <div class="pdf-pane-wrapper">
+                <div class="pdf-pane-toolbar">
+                  <span class="pdf-label">
+                    <i class="ag-icon ag-person-fill text-primary"></i>
+                    <span id="pdf-label-a">This Student</span>
+                  </span>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" id="pdf-open-a"
+                            title="Open PDF in new tab" onclick="openPdfTab('a')">
+                      <i class="ag-icon ag-box-arrow-up-right"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="pdf-expand-a"
+                            title="Toggle fullscreen" onclick="togglePdfFullscreen('pdf-frame-a', 'pdf-expand-a')">
+                      <i class="ag-icon ag-fullscreen"></i>
+                    </button>
+                  </div>
+                </div>
+                <iframe id="pdf-frame-a" class="pdf-iframe" title="Student A PDF" src=""></iframe>
+              </div>
+
+              <!-- Right PDF: compared student -->
+              <div class="pdf-pane-wrapper">
+                <div class="pdf-pane-toolbar">
+                  <span class="pdf-label">
+                    <i class="ag-icon ag-person-fill text-danger"></i>
+                    <span id="pdf-label-b">Compared Student</span>
+                  </span>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" id="pdf-open-b"
+                            title="Open PDF in new tab" onclick="openPdfTab('b')">
+                      <i class="ag-icon ag-box-arrow-up-right"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="pdf-expand-b"
+                            title="Toggle fullscreen" onclick="togglePdfFullscreen('pdf-frame-b', 'pdf-expand-b')">
+                      <i class="ag-icon ag-fullscreen"></i>
+                    </button>
+                  </div>
+                </div>
+                <iframe id="pdf-frame-b" class="pdf-iframe" title="Student B PDF" src=""></iframe>
+              </div>
+
+            </div>
+            <!-- PDF browser support note -->
+            <p class="x-small text-muted mt-2 mb-0" id="pdf-support-note" style="display:none">
+              <i class="ag-icon ag-info-circle me-1"></i>
+              If a PDF does not display inline, use the
+              <i class="ag-icon ag-box-arrow-up-right"></i> button to open it in a new tab.
+            </p>
+          </div>
+
+        </div><!-- /.tab-content -->
+      </div>
+
+    </div><!-- /#detail-content -->
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  await guardSession();
+
+  const params   = new URLSearchParams(window.location.search);
+  const subId    = params.get("id") || params.get("sub");
+  const batchId  = params.get("batch");
+  if (!subId) { window.location.href = "/pages/dashboard.html"; return; }
+
+  try {
+    const [detail, pairs] = await Promise.all([
+      Api.results.submissionDetail(subId),
+      Api.results.submissionPairs(subId),
+    ]);
+
+    // Hide skeletons
+    const donutSkel = document.getElementById("donut-skeleton");
+    if (donutSkel) donutSkel.style.display = "none";
+    const barSkel = document.getElementById("bar-skeleton");
+    if (barSkel) barSkel.style.display = "none";
+
+    // Student header
+    document.getElementById("student-name").textContent = detail.student_name || "Unknown Student";
+    const studentIdEl = document.getElementById("student-id");
+    if (studentIdEl) {
+      studentIdEl.textContent = detail.student_id || "—";
+    }
+    const activeBatchId = batchId || detail.batch_id;
+    document.getElementById("batch-ref").textContent = activeBatchId ? String(activeBatchId).slice(0, 8) + "…" : "—";
+    const backBatchLink = document.getElementById("back-to-batch-link");
+    if (backBatchLink && activeBatchId) {
+      backBatchLink.href = `/pages/results.html?batch=${activeBatchId}`;
+    }
+
+    const rs = detail.risk_score || {};
+    const ai = detail.ai_result  || {};
+
+    // Risk badge
+    const badge = document.getElementById("risk-badge");
+    const riskLevel = (rs.risk_level || "low").toLowerCase();
+    badge.textContent = riskLevel.toUpperCase();
+    badge.className   = `badge-risk badge-risk-${riskLevel} fs-6`;
+
+    // Score breakdown tiles
+    document.getElementById("weighted-score").textContent = pct(rs.weighted_score);
+    document.getElementById("ai-prob").textContent        = pct(rs.ai_prob);   // use risk_score.ai_prob
+    document.getElementById("text-sim").textContent       = pct(rs.text_sim_max);
+    
+    if (rs.code_sim_max === null) {
+      document.getElementById("code-sim").innerHTML = '<span class="text-muted fs-6">N/A</span>';
+    } else {
+      document.getElementById("code-sim").textContent = pct(rs.code_sim_max);
+    }
+    
+    const wpLabel = document.getElementById("weight-profile-badge");
+    if (wpLabel) {
+        if (rs.weight_profile === "text_only" || rs.weight_profile === "theory_only") {
+            wpLabel.textContent = "Theory-Only Profile";
+            wpLabel.className = "badge bg-info bg-opacity-10 text-info mt-2";
+        } else {
+            wpLabel.textContent = "Code-Present Profile";
+            wpLabel.className = "badge bg-secondary bg-opacity-10 text-secondary mt-2";
+        }
+    }
+
+    // FR-MARK-02: Marks tile
+    if (detail.marks_obtained != null) {
+      document.getElementById("marks-tile").style.display  = "";
+      document.getElementById("marks-obtained").textContent = fmtMarks(detail.marks_obtained);
+      // Try to get total_marks from breakdown or show only obtained
+      document.getElementById("marks-total-label").textContent =
+        detail.marks_breakdown ? "after deductions" : "";
+    }
+
+    // FR-MARK-02: Marks breakdown card
+    if (detail.marks_breakdown && Object.keys(detail.marks_breakdown).length > 0) {
+      const mb = detail.marks_breakdown;
+      document.getElementById("marks-breakdown-card").style.display = "";
+      document.getElementById("marks-final-badge").textContent = fmtMarks(detail.marks_obtained);
+      const grid = document.getElementById("marks-breakdown-grid");
+      const labelMap = {
+        ai_deduction:         "AI Detection",
+        text_copy_deduction:  "Text Similarity",
+        code_ast_deduction:   "Code Similarity",
+        risk_score_deduction: "Risk Score",
+      };
+      grid.innerHTML = "";
+      for (const [key, val] of Object.entries(mb)) {
+        const label = labelMap[key] || key;
+        const isZero = val === 0;
+        grid.insertAdjacentHTML("beforeend", `
+          <div class="marks-breakdown-item">
+            <span class="deduct-label">${label}</span>
+            <span class="deduct-value${isZero ? " zero" : ""}">
+              ${isZero ? "✓ 0" : "−" + fmtMarks(val)}
+            </span>
+          </div>`);
+      }
+    }
+
+    // AI Detection details
+    document.getElementById("perplexity").textContent  = fmt(ai.perplexity_score);
+    document.getElementById("burstiness").textContent  = fmt(ai.burstiness_score);
+    document.getElementById("stylometric").textContent = pct(ai.stylometric_score);
+    document.getElementById("ai-source").textContent   = ai.source || "—";
+
+    if (ai.api_score != null) {
+      document.getElementById("api-score-row").style.display = "";
+      document.getElementById("api-score").textContent = pct(ai.api_score);
+    }
+
+    // Similarity pairs table
+    const tbody  = document.getElementById("pairs-table-body");
+    const noMsg  = document.getElementById("no-pairs-msg");
+
+    if (!pairs || pairs.length === 0) {
+      noMsg.style.display = "";
+      tbody.innerHTML     = "";
+    } else {
+      noMsg.style.display = "none";
+      pairs.forEach(p => {
+        const otherId = String(p.sub_a_id) === subId ? p.sub_b_id : p.sub_a_id;
+        const otherName = p.other_student_name || "Unknown";
+        const otherStudentId = p.other_student_id || "N/A";
+        
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.innerHTML = `
+          <td>
+            <div class="fw-bold text-truncate" style="max-width: 180px;" title="${escapeHtml(otherName)}">${escapeHtml(otherName)}</div>
+            <div class="small text-muted">${escapeHtml(otherStudentId)}</div>
+          </td>
+          <td>${pct(p.tfidf_score)}</td>
+          <td>${pct(p.semantic_score)}</td>
+          <td><strong class="${fusedColor(p.text_sim_fused)}">${pct(p.text_sim_fused)}</strong></td>
+          <td>${pct(p.code_ast_score)}</td>
+          <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${directionLabel(p.copy_direction)}</span></td>`;
+
+        tr.onclick = async () => {
+          // Highlight selected row
+          document.querySelectorAll("#pairs-table-body tr").forEach(r => r.classList.remove("table-active"));
+          tr.classList.add("table-active");
+          
+          // Trigger diff pane fade in
+          const diffA = document.getElementById("diff-text-a");
+          const diffB = document.getElementById("diff-text-b");
+          [diffA, diffB].forEach(el => {
+              el.classList.remove('animate-fade-in');
+              void el.offsetWidth; // trigger reflow
+              el.classList.add('animate-fade-in');
+          });
+
+          const shortOther = String(otherId).slice(0, 8) + "…";
+          document.getElementById("diff-pair-label").textContent = `Comparing with ${otherName} (${otherStudentId})`;
+
+          // ── Text diff loading state ───────────────────────────────────
+          document.getElementById("diff-text-a").innerHTML = '<span class="text-muted">Loading…</span>';
+          document.getElementById("diff-text-b").innerHTML = '<span class="text-muted">Loading…</span>';
+
+          // ── PDF viewer: show iframes immediately ──────
+          document.getElementById("pdf-placeholder").style.display  = "none";
+          document.getElementById("pdf-viewer").style.display        = "";
+          document.getElementById("pdf-support-note").style.display  = "";
+          
+          window._subIdA = subId;
+          window._subIdB = otherId;
+
+          // Authenticated PDF blob loading into iframe
+          loadPdfFrame("pdf-frame-a", subId);
+          loadPdfFrame("pdf-frame-b", otherId);
+
+          try {
+            const otherDetail = await Api.results.submissionDetail(otherId);
+
+            const nameA = (detail.student_name || "This Student");
+            const nameB = otherDetail.student_name || shortOther;
+
+            // Update text diff headers
+            document.getElementById("diff-label-a").textContent = nameA;
+            document.getElementById("diff-label-b").textContent = nameB;
+
+            // Update PDF pane labels
+            document.getElementById("pdf-label-a").textContent = nameA;
+            document.getElementById("pdf-label-b").textContent = nameB;
+
+            // ── Text diff ──────────────────────────────────────────────
+            const textA = detail.raw_text     || "No text extracted.";
+            const textB = otherDetail.raw_text || "No text extracted.";
+
+            if (typeof diff_match_patch !== "undefined") {
+              const dmp   = new diff_match_patch();
+              const diffs = dmp.diff_main(textA, textB);
+              dmp.diff_cleanupSemantic(diffs);
+
+              let htmlA = "";
+              let htmlB = "";
+
+              diffs.forEach(part => {
+                const txt = escapeHtml(part[1]).replace(/\n/g, "<br/>");
+                if (part[0] === 0) {  // Equality — suspicious match
+                  const h = `<mark>${txt}</mark>`;
+                  htmlA += h;
+                  htmlB += h;
+                } else if (part[0] === -1) {  // Only in A
+                  htmlA += txt;
+                } else if (part[0] === 1) {   // Only in B
+                  htmlB += txt;
+                }
+              });
+
+              document.getElementById("diff-text-a").innerHTML = htmlA || "<em class='text-muted'>No content.</em>";
+              document.getElementById("diff-text-b").innerHTML = htmlB || "<em class='text-muted'>No content.</em>";
+            } else {
+              document.getElementById("diff-text-a").textContent = textA;
+              document.getElementById("diff-text-b").textContent = textB;
+            }
+          } catch (e) {
+            console.error(e);
+            document.getElementById("diff-text-a").innerHTML =
+              `<span class="text-muted">${escapeHtml(detail.raw_text || "No text extracted.")}</span>`;
+            document.getElementById("diff-text-b").innerHTML =
+              '<span class="text-danger">Failed to load compared submission.</span>';
+            // Still show the PDF iframes even if text detail fetch fails
+          }
+        };
+
+        tbody.appendChild(tr);
+      });
+
+      // Auto-select the top peer pair row to load PDF & text comparison immediately
+      const firstRow = tbody.querySelector("tr");
+      if (firstRow) firstRow.click();
+    }
+
+    // Render Visual Analytics & Risk Charts (FR-DASH-04)
+    initSubmissionCharts(detail, pairs);
+
+    // Bind View PDF & Download Originality Report buttons with authenticated blob handling
+    const origPdfBtn = document.getElementById("btn-download-originality-pdf");
+    if (origPdfBtn) {
+      origPdfBtn.onclick = async () => {
+        const originalHtml = origPdfBtn.innerHTML;
+        try {
+          origPdfBtn.disabled = true;
+          origPdfBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Generating Report...</span>`;
+          if (window.UI?.showToast) UI.showToast("Generating AcademicGuard Originality Report PDF...", "info");
+          await (Api.reports || Api.report).downloadSubmissionPdf(subId);
+          if (window.UI?.showToast) UI.showToast("Student Originality Report downloaded successfully!", "success");
+        } catch (err) {
+          console.error("PDF Download failed:", err);
+          if (window.UI?.showToast) UI.showToast(`Download failed: ${err.detail || err.message || "Server error"}`, "danger");
+        } finally {
+          origPdfBtn.disabled = false;
+          origPdfBtn.innerHTML = originalHtml;
+        }
+      };
+    }
+
+    const pdfBtn = document.getElementById("btn-view-pdf");
+    if (pdfBtn) {
+      pdfBtn.onclick = async () => {
+        const originalHtml = pdfBtn.innerHTML;
+        try {
+          pdfBtn.disabled = true;
+          pdfBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Opening PDF...</span>`;
+          await (Api.reports || Api.report).viewOriginalPdf(subId);
+        } catch (err) {
+          console.error("View original PDF failed:", err);
+          if (window.UI?.showToast) UI.showToast(`Could not open PDF: ${err.detail || err.message || "File not found"}`, "danger");
+        } finally {
+          pdfBtn.disabled = false;
+          pdfBtn.innerHTML = originalHtml;
+        }
+      };
+    }
+
+  } catch (err) {
+    const spinnerEl = document.getElementById("loading-spinner");
+    if (spinnerEl) spinnerEl.style.display = "none";
+    const errEl = document.getElementById("error-message");
+    if (errEl) {
+      errEl.innerHTML = `<i class="ag-icon ag-exclamation-triangle-fill me-2"></i>${escapeHtml(err.detail || err.message || "Failed to load student detail.")}`;
+      errEl.style.display = "block";
+    }
+  }
+});
+
+// ── Visual Analytics & Graph Generators ──────────────────────────────────────
+let subAiChartInstance = null;
+let subRiskChartInstance = null;
+let subPeerChartInstance = null;
+
+let currentDetailData = null;
+let currentPairsData = null;
+
+function initSubmissionCharts(detail, pairs) {
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js library is not available.");
+    return;
+  }
+
+  currentDetailData = detail;
+  currentPairsData = pairs;
+
+  const rs = detail.risk_score || {};
+  const ai = detail.ai_result || {};
+
+  const aiProb = Math.min(100, Math.max(0, Math.round((rs.ai_prob != null ? rs.ai_prob : (ai.stylometric_score || 0)) * 100)));
+  const humanProb = 100 - aiProb;
+
+  const textSim = Math.min(100, Math.max(0, Math.round((rs.text_sim_max || 0) * 100)));
+  const codeSim = rs.code_sim_max != null ? Math.min(100, Math.max(0, Math.round(rs.code_sim_max * 100))) : null;
+  const weightedRisk = Math.min(100, Math.max(0, Math.round((rs.weighted_score || 0) * 100)));
+
+  // Dynamic Theme Colors for Light / Dark Mode contrast
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isDark = currentTheme === 'dark';
+  const labelTextColor = isDark ? '#f8fafc' : '#1e293b';
+  const subTextColor = isDark ? '#94a3b8' : '#64748b';
+  const gridBorderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+
+  // Calculate TF-IDF vs Semantic max from pairs if available
+  let maxTfidf = 0;
+  let maxSemantic = 0;
+  if (pairs && pairs.length > 0) {
+    pairs.forEach(p => {
+      if (p.tfidf_score && p.tfidf_score * 100 > maxTfidf) maxTfidf = Math.round(p.tfidf_score * 100);
+      if (p.semantic_score && p.semantic_score * 100 > maxSemantic) maxSemantic = Math.round(p.semantic_score * 100);
+    });
+  } else {
+    maxTfidf = Math.round(textSim * 0.9);
+    maxSemantic = textSim;
+  }
+
+  // Update legends
+  const aiLegend = document.getElementById('sub-ai-legend-val');
+  const humanLegend = document.getElementById('sub-human-legend-val');
+  if (aiLegend) aiLegend.textContent = `${aiProb}%`;
+  if (humanLegend) humanLegend.textContent = `${humanProb}%`;
+
+  // 1. AI vs Human Donut Chart (Eye-Smoothing Palette)
+  const ctxAi = document.getElementById('sub-ai-donut-chart');
+  if (ctxAi) {
+    if (subAiChartInstance) subAiChartInstance.destroy();
+
+    const isHighAi = aiProb >= 70;
+    const isMedAi = aiProb >= 35 && aiProb < 70;
+    const aiColor = isHighAi ? '#f43f5e' : isMedAi ? '#f59e0b' : '#3b82f6';
+    const humanColor = '#10b981';
+
+    subAiChartInstance = new Chart(ctxAi, {
+      type: 'doughnut',
+      data: {
+        labels: ['AI Generated', 'Human Authored'],
+        datasets: [{
+          data: [aiProb, humanProb],
+          backgroundColor: [aiColor, humanColor],
+          borderWidth: 0,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '74%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.label}: ${ctx.raw}%`
+            }
+          }
+        }
+      }
+    });
+
+    const aiCenterEl = document.getElementById('sub-ai-center-val');
+    if (aiCenterEl) {
+      aiCenterEl.textContent = `${aiProb}%`;
+      aiCenterEl.style.color = aiColor;
+    }
+  }
+
+  // 2. Multi-Factor Integrity Spectrum Bar Chart (Eye-Smoothing Color Palette & Clear Labels)
+  const ctxRisk = document.getElementById('sub-risk-bar-chart');
+  if (ctxRisk) {
+    if (subRiskChartInstance) subRiskChartInstance.destroy();
+
+    const labels = ['AI Probability', 'Semantic Sim (MiniLM)', 'Lexical Sim (TF-IDF)'];
+    const dataVals = [aiProb, maxSemantic, maxTfidf];
+    const bgColors = [
+      aiProb >= 70 ? '#f43f5e' : aiProb >= 35 ? '#f59e0b' : '#3b82f6',
+      '#6366f1',
+      '#0ea5e9',
+    ];
+
+    if (codeSim !== null) {
+      labels.push('AST Code Structure');
+      dataVals.push(codeSim);
+      bgColors.push(codeSim >= 70 ? '#f43f5e' : codeSim >= 35 ? '#f59e0b' : '#8b5cf6');
+    }
+
+    labels.push('Composite Risk Score');
+    dataVals.push(weightedRisk);
+    bgColors.push(weightedRisk >= 70 ? '#f43f5e' : weightedRisk >= 35 ? '#f59e0b' : '#10b981');
+
+    subRiskChartInstance = new Chart(ctxRisk, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataVals,
+          backgroundColor: bgColors,
+          borderRadius: 6,
+          barThickness: 20,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { left: 10, right: 15, top: 5, bottom: 5 }
+        },
+        scales: {
+          x: {
+            min: 0,
+            max: 100,
+            grid: { color: gridBorderColor, drawBorder: false },
+            ticks: {
+              callback: v => `${v}%`,
+              color: subTextColor,
+              font: { size: 11, weight: '500' }
+            }
+          },
+          y: {
+            grid: { display: false, drawBorder: false },
+            ticks: {
+              color: labelTextColor,
+              font: { size: 12, weight: '700' }
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` Score: ${ctx.raw}%`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Top Peer Matches Comparison Chart (if pairs exist)
+  const peerCard = document.getElementById('sub-peer-matches-card');
+  const ctxPeer = document.getElementById('sub-peer-bar-chart');
+  if (peerCard && ctxPeer) {
+    if (pairs && pairs.length > 0) {
+      peerCard.style.display = 'block';
+      if (subPeerChartInstance) subPeerChartInstance.destroy();
+
+      const topPairs = pairs.slice(0, 5);
+      const peerLabels = topPairs.map(p => {
+        const name = p.other_student_name || 'Peer';
+        const sid = p.other_student_id ? ` (${p.other_student_id})` : '';
+        return name + sid;
+      });
+      const peerTextSim = topPairs.map(p => Math.round((p.text_sim_fused || 0) * 100));
+      const peerCodeSim = topPairs.map(p => Math.round((p.code_ast_score || 0) * 100));
+
+      subPeerChartInstance = new Chart(ctxPeer, {
+        type: 'bar',
+        data: {
+          labels: peerLabels,
+          datasets: [
+            {
+              label: 'Text Similarity',
+              data: peerTextSim,
+              backgroundColor: '#6366f1',
+              borderRadius: 6,
+            },
+            {
+              label: 'Code AST Similarity',
+              data: peerCodeSim,
+              backgroundColor: '#06b6d4',
+              borderRadius: 6,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: labelTextColor, font: { size: 11, weight: '500' } }
+            },
+            y: {
+              min: 0,
+              max: 100,
+              grid: { color: gridBorderColor, drawBorder: false },
+              ticks: {
+                callback: v => `${v}%`,
+                color: subTextColor
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: labelTextColor, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw}%`
+              }
+            }
+          }
+        }
+      });
+    } else {
+      peerCard.style.display = 'none';
+    }
+  }
+}
+
+window.addEventListener('ag-theme-change', () => {
+  if (currentDetailData) {
+    initSubmissionCharts(currentDetailData, currentPairsData);
+  }
+});
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+const toNum    = v => (v !== null && v !== undefined && v !== '' && !isNaN(Number(v))) ? Number(v) : null;
+const pct      = v => { const n = toNum(v); return n !== null ? `${(n * 100).toFixed(1)}%` : "—"; };
+const fmt      = v => { const n = toNum(v); return n !== null ? n.toFixed(2) : "—"; };
+const fmtMarks = v => { const n = toNum(v); return n !== null ? n.toFixed(1) : "—"; };
+const escapeHtml = str =>
+  String(str || "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function fusedColor(score) {
+  if (score == null) return "";
+  if (score >= 0.7) return "text-danger";
+  if (score >= 0.4) return "text-warning";
+  return "text-success";
+}
+
+function directionLabel(dir) {
+  const map = {
+    a_to_b: "A → B",
+    b_to_a: "B → A",
+    mutual:  "Mutual",
+    unknown: "Unknown",
+  };
+  return map[dir] || dir || "—";
+}
+
+// ── PDF Comparison helpers ───────────────────────────────────────────────────
+
+async function loadPdfFrame(frameId, subId) {
+  const frame = document.getElementById(frameId);
+  if (!frame || !subId) return;
+  try {
+    const res = await fetch(`${API_BASE}/submissions/${subId}/pdf`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (res.status === 401) {
+      if (window.Api && window.Api.auth) await window.Api.auth.me();
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    frame.src = objectUrl;
+    return objectUrl;
+  } catch (err) {
+    console.error(`Failed to load PDF for ${subId}:`, err);
+    frame.srcdoc = `<div style="font-family: system-ui; padding: 2rem; text-align: center; color: #ef4444;"><p style="font-weight:bold; margin-bottom:0.5rem;">Could not load PDF document</p><p style="font-size:0.85rem; opacity:0.8;">${err.message}</p></div>`;
+  }
+}
+
+/** Open a PDF pane URL in a new browser tab ('a' or 'b') */
+function openPdfTab(side) {
+  const subId = side === 'a' ? window._subIdA : window._subIdB;
+  if (subId && window.Api && window.Api.report && window.Api.report.viewOriginalPdf) {
+    window.Api.report.viewOriginalPdf(subId);
+  } else if (subId) {
+    window.open(`${API_BASE}/submissions/${subId}/pdf`, "_blank");
+  }
+}
+
+/** Toggle fullscreen on an iframe element */
+function togglePdfFullscreen(iframeId, btnId) {
+  const frame = document.getElementById(iframeId);
+  const btn   = document.getElementById(btnId);
+  if (!frame) return;
+
+  if (frame.classList.contains('expanded')) {
+    // Exit fullscreen
+    frame.classList.remove('expanded');
+    document.body.style.overflow = '';
+    btn.innerHTML = '<i class="ag-icon ag-fullscreen"></i>';
+    btn.title = 'Toggle fullscreen';
+  } else {
+    // Enter fullscreen
+    frame.classList.add('expanded');
+    document.body.style.overflow = 'hidden';
+    btn.innerHTML = '<i class="ag-icon ag-fullscreen-exit"></i>';
+    btn.title = 'Exit fullscreen';
+  }
+}
+
+// Close fullscreen on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    ['pdf-frame-a', 'pdf-frame-b'].forEach(id => {
+      const frame = document.getElementById(id);
+      const btn   = document.getElementById(id.replace('frame', 'expand'));
+      if (frame && frame.classList.contains('expanded')) {
+        frame.classList.remove('expanded');
+        document.body.style.overflow = '';
+        if (btn) {
+          btn.innerHTML = '<i class="ag-icon ag-fullscreen"></i>';
+          btn.title = 'Toggle fullscreen';
+        }
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>

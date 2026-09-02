@@ -1,0 +1,4 @@
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH=$PYTHONPATH:$DIR
+"$DIR/venv/bin/python3" -m uvicorn app.main:app --port 8000 --reload

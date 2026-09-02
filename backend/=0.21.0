@@ -1,0 +1,19 @@
+Collecting tree-sitter
+  Downloading tree_sitter-0.26.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (10 kB)
+Collecting tree-sitter-python
+  Downloading tree_sitter_python-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (1.9 kB)
+Collecting tree-sitter-c
+  Downloading tree_sitter_c-0.24.2-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (1.8 kB)
+Collecting tree-sitter-cpp
+  Downloading tree_sitter_cpp-0.23.4-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.8 kB)
+Collecting tree-sitter-java
+  Downloading tree_sitter_java-0.23.5-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.7 kB)
+Downloading tree_sitter-0.26.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (668 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 668.1/668.1 kB 5.4 MB/s  0:00:00
+Downloading tree_sitter_python-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (108 kB)
+Downloading tree_sitter_c-0.24.2-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (94 kB)
+Downloading tree_sitter_cpp-0.23.4-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (316 kB)
+Downloading tree_sitter_java-0.23.5-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (84 kB)
+Installing collected packages: tree-sitter-python, tree-sitter-java, tree-sitter-cpp, tree-sitter-c, tree-sitter
+
+Successfully installed tree-sitter-0.26.0 tree-sitter-c-0.24.2 tree-sitter-cpp-0.23.4 tree-sitter-java-0.23.5 tree-sitter-python-0.25.0

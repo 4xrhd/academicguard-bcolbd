@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Analysis | AcademicGuard</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/icons.css">
+    <link rel="stylesheet" href="/css/main.css"/>
+  <link rel="stylesheet" href="/css/dashboard.css"/>
+  <script>
+    (function() {
+      const t = localStorage.getItem('ag-theme') || localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+  <style>
+    /* Ambient Glow Backgrounds */
+    .upload-ambient-glow {
+      position: absolute;
+      width: 550px;
+      height: 550px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      top: -80px;
+      right: 5%;
+      z-index: 0;
+    }
+    .upload-ambient-glow-left {
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 70%);
+      filter: blur(75px);
+      pointer-events: none;
+      bottom: 50px;
+      left: -50px;
+      z-index: 0;
+    }
+
+    /* Glassmorphic Upload Cards */
+    .upload-glass-card {
+      background: linear-gradient(170deg, rgba(26, 34, 52, 0.72) 0%, rgba(15, 23, 42, 0.88) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--ag-radius-xl, 20px);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    [data-theme="light"] .upload-glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(228, 228, 231, 0.9);
+      box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.06);
+    }
+    .upload-glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.32);
+      box-shadow: 0 20px 42px -8px rgba(0, 0, 0, 0.52), 0 0 20px rgba(99, 102, 241, 0.12);
+    }
+
+    /* Header in Card */
+    .upload-card-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--ag-text);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0;
+    }
+    .upload-card-title-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Form Inputs on Upload Page */
+    .upload-form-group {
+      margin-bottom: 1.35rem;
+    }
+    .upload-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ag-text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-transform: uppercase;
+    }
+    .upload-input-wrap {
+      position: relative;
+    }
+    .upload-input-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ag-text-muted);
+      pointer-events: none;
+      transition: color 0.2s ease;
+      z-index: 2;
+    }
+    .upload-input-icon .ag-icon {
+      width: 1.05rem;
+      height: 1.05rem;
+    }
+    .upload-input {
+      padding-left: 2.75rem !important;
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid rgba(148, 163, 184, 0.18) !important;
+      border-radius: 12px !important;
+      color: #f8fafc !important;
+      font-size: 0.92rem !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      height: 48px;
+    }
+    [data-theme="light"] .upload-input {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #09090b !important;
+    }
+    .upload-input:focus {
+      background: rgba(15, 23, 42, 0.9) !important;
+      border-color: #6366f1 !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 4px 18px rgba(99, 102, 241, 0.18) !important;
+      color: #ffffff !important;
+    }
+    .upload-input:focus ~ .upload-input-icon,
+    .upload-input-wrap:focus-within .upload-input-icon {
+      color: #818cf8 !important;
+    }
+
+    /* Pro Tip Banner */
+    .upload-tip-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.28);
+      border-radius: 14px;
+      padding: 1rem 1.15rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.08);
+    }
+    .upload-tip-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.22);
+      color: #818cf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .upload-tip-icon .ag-icon {
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+
+    /* Dropzone Styling */
+    .dropzone {
+      border: 2px dashed rgba(99, 102, 241, 0.4);
+      background: radial-gradient(ellipse at 50% 25%, rgba(99, 102, 241, 0.12) 0%, rgba(15, 23, 42, 0.7) 75%, rgba(10, 15, 29, 0.9) 100%);
+      border-radius: 20px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 3.25rem 2rem;
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    [data-theme="light"] .dropzone {
+      background: radial-gradient(ellipse at 50% 25%, rgba(99, 102, 241, 0.06) 0%, #f8fafc 100%);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: #38bdf8;
+      background: radial-gradient(ellipse at 50% 25%, rgba(56, 189, 248, 0.2) 0%, rgba(99, 102, 241, 0.15) 60%, rgba(15, 23, 42, 0.95) 100%);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 16px 40px rgba(99, 102, 241, 0.28), 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+    .dropzone-icon-bubble {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(6, 182, 212, 0.25) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.45);
+      box-shadow: 0 10px 28px rgba(99, 102, 241, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .dropzone:hover .dropzone-icon-bubble {
+      transform: translateY(-4px) scale(1.08);
+      box-shadow: 0 14px 34px rgba(56, 189, 248, 0.45);
+    }
+    .dropzone-icon-bubble .ag-icon {
+      width: 2.2rem;
+      height: 2.2rem;
+      color: #818cf8;
+    }
+    .dropzone-format-pills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+    .dropzone-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: var(--ag-radius-pill);
+      padding: 0.28rem 0.75rem;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--ag-text-muted);
+    }
+    [data-theme="light"] .dropzone-pill {
+      background: rgba(241, 245, 249, 0.9);
+      border-color: rgba(203, 213, 225, 0.8);
+    }
+    .dropzone-pill .ag-icon {
+      width: 0.85rem;
+      height: 0.85rem;
+    }
+
+    /* File Pills */
+    .file-pill {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    [data-theme="light"] .file-pill {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .file-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      border-color: rgba(99, 102, 241, 0.38);
+    }
+    .file-pill-icon-bubble {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f87171;
+      flex-shrink: 0;
+    }
+    .file-pill-icon-bubble .ag-icon {
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+    .remove-file-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--ag-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .remove-file-btn:hover {
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+    }
+    .remove-file-btn .ag-icon {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    /* Launch Button */
+    .btn-launch-analysis {
+      background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      border-radius: 14px !important;
+      padding: 0.9rem 2.5rem !important;
+      font-size: 1.05rem !important;
+      font-weight: 700 !important;
+      color: #ffffff !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+      cursor: pointer;
+    }
+    .btn-launch-analysis:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 36px rgba(79, 70, 229, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    }
+    .btn-launch-analysis:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body data-page="upload" class="animate-fade-in">
+
+<!-- Navbar -->
+<nav class="navbar navbar-ag px-4 d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center gap-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-logo">
+        <i class="ag-icon ag-shield-check"></i>
+      </div>
+      <a href="/pages/dashboard.html" class="navbar-brand text-decoration-none">
+        AcademicGuard
+      </a>
+    </div>
+
+    <!-- Center Nav Tabs -->
+    <div class="top-nav-tabs d-none d-md-flex align-items-center gap-1 ms-2">
+      <a href="/pages/dashboard.html" class="top-nav-tab">
+        <i class="ag-icon ag-house-door"></i> Dashboard
+      </a>
+      <a href="/pages/results.html" class="top-nav-tab">
+        <i class="ag-icon ag-file-earmark-text"></i> Reports
+      </a>
+      <a href="/pages/settings.html" class="top-nav-tab">
+        <i class="ag-icon ag-gear"></i> Settings
+      </a>
+      <a href="javascript:void(0)" class="top-nav-tab" onclick="UI.showToast('AcademicGuard | Enterprise Integrity Platform', 'info')">
+        <i class="ag-icon ag-question-circle"></i> Support
+      </a>
+    </div>
+  </div>
+
+  <div class="navbar-actions d-flex align-items-center gap-3">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <i class="ag-icon ag-moon-fill" id="theme-icon"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-link text-muted p-0 d-none d-sm-block position-relative" title="Notifications" aria-label="Notifications" onclick="UI.showToast('All analysis systems operating normally.', 'success')">
+      <i class="ag-icon ag-bell fs-5"></i>
+    </button>
+    
+    <!-- User Dropdown with Role and Sign Out -->
+    <div class="dropdown">
+      <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+        <div class="user-avatar-small rounded-circle d-flex align-items-center justify-content-center fw-bold" id="user-avatar-initials" style="width: 36px; height: 36px; background: var(--ag-primary-soft); color: var(--ag-primary); font-size: 0.9rem;">
+          <i class="ag-icon ag-person-fill"></i>
+        </div>
+        <div class="d-none d-lg-block text-start">
+          <div class="fw-semibold text-truncate" id="nav-username" style="max-width: 140px; font-size: 0.85rem;">User</div>
+          <span class="badge bg-primary bg-opacity-10 text-primary" id="nav-userrole" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Instructor</span>
+        </div>
+        <i class="ag-icon ag-chevron-down text-muted small ms-1"></i>
+      </div>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary border-opacity-25 mt-2" style="background: var(--ag-card-bg); min-width: 210px; z-index: 1050;">
+        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+          <div class="fw-bold text-truncate" id="dropdown-user-name">Loading...</div>
+          <div class="small text-muted" id="dropdown-user-role">Role</div>
+        </li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/dashboard.html"><i class="ag-icon ag-grid-1x2"></i> Dashboard</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/results.html"><i class="ag-icon ag-bar-chart-steps"></i> All Batches</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/settings.html"><i class="ag-icon ag-gear"></i> Settings</a></li>
+        <li id="dropdown-admin-item" style="display: none;"><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning fw-semibold" href="/pages/admin.html"><i class="ag-icon ag-shield-lock-fill"></i> Admin Panel (RBAC)</a></li>
+        <li><hr class="dropdown-divider my-1 border-secondary border-opacity-25"></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="ag-icon ag-box-arrow-right"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Toggle -->
+<button class="sidebar-toggle d-lg-none" id="sidebar-toggle" aria-label="Toggle menu">
+  <i class="ag-icon ag-list"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="dashboard-layout">
+  <aside class="sidebar" id="sidebar">
+    <!-- User Profile Section -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <div class="user-avatar" id="sidebar-avatar">AG</div>
+        <span class="user-status-dot" title="Active"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">User</div>
+        <span class="user-role-badge instructor" id="sidebar-role-badge">Instructor</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/pages/dashboard.html" data-tooltip="Dashboard">
+          <i class="ag-icon ag-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link active" href="/pages/upload.html" data-tooltip="New Analysis">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+        <a class="nav-link" href="/pages/results.html" data-tooltip="All Batches">
+          <i class="ag-icon ag-bar-chart-steps"></i>
+          <span>All Batches</span>
+        </a>
+        <a class="nav-link" href="/pages/training.html" data-tooltip="Model Training">
+          <i class="ag-icon ag-cpu"></i>
+          <span>Model Training</span>
+        </a>
+        <a class="nav-link" href="/pages/annotate.html" data-tooltip="Annotate Submissions">
+          <i class="ag-icon ag-pencil-square"></i>
+          <span>Annotate Submissions</span>
+        </a>
+        <a class="nav-link" href="/pages/settings.html" data-tooltip="Settings">
+          <i class="ag-icon ag-gear"></i>
+          <span>Settings</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link" href="/pages/admin.html" id="sidebar-admin-link" data-tooltip="User Management (RBAC)" style="display: none;">
+          <i class="ag-icon ag-people-fill"></i>
+          <span>User Management</span>
+          <span class="nav-badge">Admin</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="sidebar-actions">
+      <a href="/pages/upload.html" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="ag-icon ag-plus-lg"></i>
+        <span>New Analysis</span>
+      </a>
+    </div>
+
+    <!-- Help Card -->
+    <div class="sidebar-help">
+      <div class="help-card">
+        <i class="ag-icon ag-shield-check"></i>
+        <div class="help-content">
+          <p class="help-title">AcademicGuard</p>
+          <p class="help-link">Integrity Platform</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="logout()" title="Sign Out">
+        <i class="ag-icon ag-box-arrow-right"></i>
+        <span class="btn-logout-text">Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main position-relative overflow-hidden">
+    <!-- Ambient Background Glows -->
+    <div class="upload-ambient-glow"></div>
+    <div class="upload-ambient-glow-left"></div>
+
+    <div class="position-relative z-1">
+      <!-- Page Header -->
+      <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(6,182,212,0.25)); border: 1px solid rgba(99,102,241,0.35);">
+                <i class="ag-icon ag-cloud-arrow-up-fill text-primary fs-4"></i>
+              </div>
+              <span>Start New Analysis</span>
+            </h2>
+            <p class="text-muted mb-0">Upload student submission PDFs for deep semantic similarity, code AST structure comparison, and AI log-likelihood analysis.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="alert-container"></div>
+
+      <!-- FR-UPLOAD-01 Upload form -->
+      <form id="upload-form" novalidate>
+        <div class="row g-4">
+          <!-- Left Column: Batch & Assignment Configuration -->
+          <div class="col-lg-5 col-12">
+            <div class="upload-glass-card h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom border-secondary border-opacity-15">
+                  <h5 class="upload-card-title">
+                    <div class="upload-card-title-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                      <i class="ag-icon ag-sliders"></i>
+                    </div>
+                    <span>Batch Parameters</span>
+                  </h5>
+                  <span class="badge badge-soft-primary fs-8">Required</span>
+                </div>
+
+                <div class="upload-form-group">
+                  <label for="batch-name" class="upload-label">
+                    <i class="ag-icon ag-pencil-square text-primary"></i>
+                    <span>Analysis Name</span>
+                  </label>
+                  <div class="upload-input-wrap">
+                    <input type="text" class="form-control upload-input" id="batch-name"
+                           placeholder="e.g. Autumn 2026 - CSE303 Final" required/>
+                    <div class="upload-input-icon">
+                      <i class="ag-icon ag-file-text"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="upload-form-group">
+                  <label for="course-code" class="upload-label">
+                    <i class="ag-icon ag-bookmark text-primary"></i>
+                    <span>Course Code</span>
+                  </label>
+                  <div class="upload-input-wrap">
+                    <input type="text" class="form-control upload-input" id="course-code"
+                           placeholder="e.g. CSE-303" required/>
+                    <div class="upload-input-icon">
+                      <i class="ag-icon ag-tag"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="upload-form-group mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="marking-config-select" class="upload-label mb-0">
+                      <i class="ag-icon ag-calculator text-primary"></i>
+                      <span>Marking Rubric</span>
+                    </label>
+                    <span class="x-small text-muted">Optional</span>
+                  </div>
+                  <div class="upload-input-wrap mt-2">
+                    <select class="form-select upload-input" aria-label="Select Marking Configuration" id="marking-config-select">
+                      <option value="">System Default (Standard 100-pt Scale)</option>
+                      <option value="custom">⚙️ -- Custom (Configure Thresholds Now) --</option>
+                    </select>
+                    <div class="upload-input-icon">
+                      <i class="ag-icon ag-gear"></i>
+                    </div>
+                  </div>
+                  <div id="config-preview" class="mt-2 p-2.5 rounded-3 small border d-none" style="background: rgba(15, 23, 42, 0.6); border-color: rgba(99,102,241,0.25) !important;">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="text-muted fw-semibold">Rubric Total:</span>
+                      <span id="preview-total" class="fw-bold text-primary font-monospace">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pro Tip Banner -->
+              <div class="upload-tip-banner mt-3">
+                <div class="upload-tip-icon">
+                  <i class="ag-icon ag-info-circle"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold small text-body mb-0.5">Automated Student Metadata Extraction</div>
+                  <p class="x-small text-muted mb-0">OpenDataLoader-PDF will automatically scan cover pages to parse Student IDs and Names from submission PDFs.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Dropzone & File Management -->
+          <div class="col-lg-7 col-12">
+            <div class="upload-glass-card h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary border-opacity-15">
+                  <h5 class="upload-card-title">
+                    <div class="upload-card-title-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+                      <i class="ag-icon ag-files"></i>
+                    </div>
+                    <span>Student Submissions</span>
+                  </h5>
+                  <span class="badge badge-soft-primary px-3 py-1.5 rounded-pill" id="file-count">
+                    <i class="ag-icon ag-file-earmark-pdf me-1"></i>0 files loaded
+                  </span>
+                </div>
+
+                <!-- Drag-and-drop zone -->
+                <div class="dropzone mb-4" id="dropzone">
+                  <div class="dropzone-icon-bubble">
+                    <i class="ag-icon ag-cloud-arrow-up-fill"></i>
+                  </div>
+                  <h5 class="fw-bold text-body mb-1" style="font-size: 1.25rem;">Drop Student PDFs Here</h5>
+                  <p class="text-muted small mb-0">
+                    Drag and drop files here, or <span class="text-primary fw-semibold" style="text-decoration: underline; text-underline-offset: 3px;">browse device</span>
+                  </p>
+                  
+                  <div class="dropzone-format-pills">
+                    <div class="dropzone-pill">
+                      <i class="ag-icon ag-file-earmark-pdf text-danger"></i>
+                      <span>PDF Only</span>
+                    </div>
+                    <div class="dropzone-pill">
+                      <i class="ag-icon ag-layers text-primary"></i>
+                      <span>1 to 60 Files</span>
+                    </div>
+                    <div class="dropzone-pill">
+                      <i class="ag-icon ag-hdd text-warning"></i>
+                      <span>Max 10MB each</span>
+                    </div>
+                  </div>
+
+                  <input type="file" id="file-input" multiple accept=".pdf,application/pdf" class="d-none"/>
+                </div>
+
+                <!-- File list preview -->
+                <div id="file-list" class="mb-0" style="max-height: 260px; overflow-y: auto;">
+                  <div class="empty-state text-center p-4">
+                    <i class="ag-icon ag-folder2-open text-muted fs-1 mb-2"></i>
+                    <p class="mb-0 fw-bold text-body">No files selected</p>
+                    <p class="small text-muted mb-0">Drag and drop student submission PDFs above to stage for analysis.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Specs highlight footer -->
+              <div class="d-flex align-items-center justify-content-between pt-3 mt-3 border-top border-secondary border-opacity-15 text-muted x-small">
+                <span class="d-flex align-items-center gap-1">
+                  <i class="ag-icon ag-shield-check text-success"></i>
+                  Encrypted local processing
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                  <i class="ag-icon ag-cpu text-primary"></i>
+                  Multi-core NLP AST parsing
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress section (hidden until upload starts) -->
+        <div id="progress-section" class="upload-glass-card mt-4" style="display:none; border-color: rgba(99, 102, 241, 0.4);">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0 text-primary d-flex align-items-center gap-2">
+              <span class="spinner-border spinner-border-sm text-primary"></span>
+              <span>ANALYZING BATCH SUBMISSIONS...</span>
+            </h6>
+            <span id="progress-percent" class="fw-bold text-primary font-monospace fs-5">0%</span>
+          </div>
+          <div class="progress mb-3" style="height: 10px; border-radius: 6px; background: rgba(15, 23, 42, 0.8);">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar" style="width: 0%; background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);"></div>
+          </div>
+          <p class="text-muted small mb-0 d-flex align-items-center gap-1.5">
+            <i class="ag-icon ag-cpu text-primary"></i>
+            <span>Running TF-IDF vectorizer, all-MiniLM-L6-v2 embeddings, and GPT-2 perplexity calculation. Keep this tab open.</span>
+          </p>
+        </div>
+
+        <!-- Bottom Action CTA -->
+        <div class="mt-4 pt-2 d-flex align-items-center gap-3">
+          <button type="submit" class="btn-launch-analysis" id="upload-btn">
+            <i class="ag-icon ag-play-circle-fill fs-5"></i>
+            <span>Launch Analysis</span>
+          </button>
+          <a href="/pages/dashboard.html" class="btn btn-outline-secondary px-4 py-3 rounded-3 text-decoration-none fw-semibold">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<!-- Marking Configuration Modal -->
+<div class="modal fade" id="markingConfigModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content glass-panel border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Marking Configuration</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="marking-config-form">
+          <!-- Total Marks -->
+          <div class="mb-4">
+            <label for="total-marks" class="form-label fw-bold">Total Marks for Assignment</label>
+            <input type="number" class="form-control" id="total-marks" placeholder="e.g. 100" min="1" step="0.5" required/>
+          </div>
+
+          <!-- AI Detection Thresholds -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">AI Detection Thresholds (%)</h6>
+            <div id="ai-thresholds-container"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addThreshold('ai')">
+              <i class="ag-icon ag-plus me-1"></i>Add Threshold
+            </button>
+          </div>
+
+          <!-- Text Copy Thresholds -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Text Copy Thresholds (%)</h6>
+            <div id="text-thresholds-container"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addThreshold('text')">
+              <i class="ag-icon ag-plus me-1"></i>Add Threshold
+            </button>
+          </div>
+
+          <!-- Code AST Thresholds -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Code AST Thresholds (%)</h6>
+            <div id="code-thresholds-container"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addThreshold('code')">
+              <i class="ag-icon ag-plus me-1"></i>Add Threshold
+            </button>
+          </div>
+
+          <!-- Risk Score Thresholds -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Risk Score Thresholds (%)</h6>
+            <div id="risk-thresholds-container"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addThreshold('risk')">
+              <i class="ag-icon ag-plus me-1"></i>Add Threshold
+            </button>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="save-as-template">
+            <label class="form-check-label small fw-bold text-primary" for="save-as-template">
+              Save these settings as a permanent template
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveMarkingConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js?v=3.0"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/auth.js?v=3.0"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/upload.js?v=3.0"></script>
+</body>
+</html>

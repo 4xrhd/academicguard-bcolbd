@@ -1,0 +1,103 @@
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv
+venv
+ENV
+env
+venv.bak/
+env.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytype/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+
+# Docker & Persistence
+data/
+!data/.gitkeep
+pgdata/
+redisdata/
+*.tar
+*.tar.gz
+*.zip
+academicguard-full.tar
+
+# Logs
+*.log
+backend/logs/
+frontend/logs/
+logs/
+
+# Process and Temporary/Crash Files
+*.pid
+backend/server.pid
+backend/startup_error.txt
+backend/traceback*.txt
+
+# Uploads & User Content (Privacy/Compliance)
+backend/uploads/
+backend/exports/
+frontend/public/uploads/
+
+# IDE & AI Tools
+.vscode/
+.idea/
+.cursor/
+.kiro/
+.qwen/
+*.swp
+*.swo
+.project
+.settings/
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

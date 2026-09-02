@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Train AI detection models with annotated data | AcademicGuard."/>
+  <title>Model Training | AcademicGuard</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/icons.css">
+    <link rel="stylesheet" href="/css/main.css"/>
+  <link rel="stylesheet" href="/css/dashboard.css"/>
+  <script>
+    (function() {
+      const t = localStorage.getItem('ag-theme') || localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+  <style>
+    .training-metric { border-radius: var(--ag-radius-lg); padding: 20px; background: var(--ag-card-bg);
+      border: 1px solid var(--ag-border); transition: var(--ag-transition-base); box-shadow: var(--ag-shadow-sm); }
+    .training-metric:hover { transform: translateY(-3px); box-shadow: var(--ag-shadow-md); border-color: hsla(var(--ag-primary-hsl), 0.3); }
+    .training-value { font-size: 2.2rem; font-weight: 800; line-height: 1; font-family: var(--ag-font-heading); }
+    .training-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--ag-text-muted); }
+    .class-bar { height: 12px; border-radius: 9999px; overflow: hidden; background: var(--ag-border); padding: 2px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08); display: flex; gap: 2px; }
+    .class-bar-fill { height: 100%; border-radius: 9999px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    .class-bar-fill.bg-success { background: linear-gradient(90deg, #10b981, #059669) !important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.35); }
+    .class-bar-fill.bg-danger { background: linear-gradient(90deg, #ef4444, #f43f5e) !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.35); }
+    
+    /* Elegant Label Distribution Pills */
+    .label-dist-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.38rem 0.75rem 0.38rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(var(--chip-rgb), 0.06);
+      border: 1px solid rgba(var(--chip-rgb), 0.22);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+    .label-dist-pill:hover {
+      transform: translateY(-2px);
+      background: rgba(var(--chip-rgb), 0.12);
+      border-color: rgba(var(--chip-rgb), 0.45);
+      box-shadow: 0 6px 16px rgba(var(--chip-rgb), 0.16);
+    }
+    .label-pill-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--chip-rgb), 0.16);
+      color: rgb(var(--chip-rgb));
+      font-size: 0.82rem;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb), 0.2);
+    }
+    .label-pill-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ag-text);
+      letter-spacing: -0.01em;
+    }
+    .label-pill-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      font-family: var(--ag-font-mono, monospace);
+      background: rgba(var(--chip-rgb), 0.18);
+      color: rgb(var(--chip-rgb));
+      border: 1px solid rgba(var(--chip-rgb), 0.32);
+    }
+
+    .train-btn { padding: 14px 40px; font-size: 1.05rem; font-weight: 700; border-radius: var(--ag-radius-sm);
+      background: linear-gradient(135deg, var(--ag-primary), #4338ca); border: none; color: #ffffff !important;
+      transition: var(--ag-transition-base); box-shadow: 0 8px 24px hsla(var(--ag-primary-hsl), 0.35); cursor: pointer; }
+    .train-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px hsla(var(--ag-primary-hsl), 0.45); }
+    .train-btn:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+    .training-progress { display: none; }
+    .training-progress.active { display: block; }
+    .history-row { cursor: pointer; transition: background 0.2s ease; }
+    .history-row:hover { background: var(--ag-primary-soft) !important; }
+    .active-badge { animation: pulse-glow 2s infinite; }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
+    .readiness-meter { width: 100%; height: 20px; border-radius: 10px; background: var(--ag-border);
+      overflow: hidden; position: relative; }
+    .readiness-fill { height: 100%; background: linear-gradient(90deg, var(--ag-danger), var(--ag-warning), var(--ag-success));
+      border-radius: 10px; transition: width 0.8s ease; }
+  </style>
+</head>
+<body data-page="training">
+
+<!-- Navbar -->
+<nav class="navbar navbar-ag px-4 d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center gap-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-logo">
+        <i class="ag-icon ag-shield-check"></i>
+      </div>
+      <a href="/pages/dashboard.html" class="navbar-brand text-decoration-none">
+        AcademicGuard
+      </a>
+    </div>
+
+    <!-- Center Nav Tabs -->
+    <div class="top-nav-tabs d-none d-md-flex align-items-center gap-1 ms-2">
+      <a href="/pages/dashboard.html" class="top-nav-tab">
+        <i class="ag-icon ag-house-door"></i> Dashboard
+      </a>
+      <a href="/pages/results.html" class="top-nav-tab">
+        <i class="ag-icon ag-file-earmark-text"></i> Reports
+      </a>
+      <a href="/pages/settings.html" class="top-nav-tab">
+        <i class="ag-icon ag-gear"></i> Settings
+      </a>
+      <a href="javascript:void(0)" class="top-nav-tab" onclick="UI.showToast('AcademicGuard | Enterprise Integrity Platform', 'info')">
+        <i class="ag-icon ag-question-circle"></i> Support
+      </a>
+    </div>
+  </div>
+
+  <div class="navbar-actions d-flex align-items-center gap-3">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <i class="ag-icon ag-moon-fill" id="theme-icon"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-link text-muted p-0 d-none d-sm-block position-relative" title="Notifications" aria-label="Notifications" onclick="UI.showToast('All analysis systems operating normally.', 'success')">
+      <i class="ag-icon ag-bell fs-5"></i>
+    </button>
+    
+    <!-- User Dropdown with Role and Sign Out -->
+    <div class="dropdown">
+      <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+        <div class="user-avatar-small rounded-circle d-flex align-items-center justify-content-center fw-bold" id="user-avatar-initials" style="width: 36px; height: 36px; background: var(--ag-primary-soft); color: var(--ag-primary); font-size: 0.9rem;">
+          <i class="ag-icon ag-person-fill"></i>
+        </div>
+        <div class="d-none d-lg-block text-start">
+          <div class="fw-semibold text-truncate" id="nav-username" style="max-width: 140px; font-size: 0.85rem;">User</div>
+          <span class="badge bg-primary bg-opacity-10 text-primary" id="nav-userrole" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Instructor</span>
+        </div>
+        <i class="ag-icon ag-chevron-down text-muted small ms-1"></i>
+      </div>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary border-opacity-25 mt-2" style="background: var(--ag-card-bg); min-width: 210px; z-index: 1050;">
+        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+          <div class="fw-bold text-truncate" id="dropdown-user-name">Loading...</div>
+          <div class="small text-muted" id="dropdown-user-role">Role</div>
+        </li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/dashboard.html"><i class="ag-icon ag-grid-1x2"></i> Dashboard</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/results.html"><i class="ag-icon ag-bar-chart-steps"></i> All Batches</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/settings.html"><i class="ag-icon ag-gear"></i> Settings</a></li>
+        <li id="dropdown-admin-item" style="display: none;"><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning fw-semibold" href="/pages/admin.html"><i class="ag-icon ag-shield-lock-fill"></i> Admin Panel (RBAC)</a></li>
+        <li><hr class="dropdown-divider my-1 border-secondary border-opacity-25"></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="ag-icon ag-box-arrow-right"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Toggle -->
+<button class="sidebar-toggle d-lg-none" id="sidebar-toggle" aria-label="Toggle menu">
+  <i class="ag-icon ag-list"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="dashboard-layout">
+  <aside class="sidebar" id="sidebar">
+    <!-- User Profile Section -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <div class="user-avatar" id="sidebar-avatar">AG</div>
+        <span class="user-status-dot" title="Active"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">User</div>
+        <span class="user-role-badge instructor" id="sidebar-role-badge">Instructor</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/pages/dashboard.html" data-tooltip="Dashboard">
+          <i class="ag-icon ag-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="/pages/upload.html" data-tooltip="New Analysis">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+        <a class="nav-link" href="/pages/results.html" data-tooltip="All Batches">
+          <i class="ag-icon ag-bar-chart-steps"></i>
+          <span>All Batches</span>
+        </a>
+        <a class="nav-link active" href="/pages/training.html" data-tooltip="Model Training">
+          <i class="ag-icon ag-cpu"></i>
+          <span>Model Training</span>
+        </a>
+        <a class="nav-link" href="/pages/annotate.html" data-tooltip="Annotate Submissions">
+          <i class="ag-icon ag-pencil-square"></i>
+          <span>Annotate Submissions</span>
+        </a>
+        <a class="nav-link" href="/pages/settings.html" data-tooltip="Settings">
+          <i class="ag-icon ag-gear"></i>
+          <span>Settings</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link" href="/pages/admin.html" id="sidebar-admin-link" data-tooltip="User Management (RBAC)" style="display: none;">
+          <i class="ag-icon ag-people-fill"></i>
+          <span>User Management</span>
+          <span class="nav-badge">Admin</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="sidebar-actions">
+      <a href="/pages/upload.html" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="ag-icon ag-plus-lg"></i>
+        <span>New Analysis</span>
+      </a>
+    </div>
+
+    <!-- Help Card -->
+    <div class="sidebar-help">
+      <div class="help-card">
+        <i class="ag-icon ag-shield-check"></i>
+        <div class="help-content">
+          <p class="help-title">AcademicGuard</p>
+          <p class="help-link">Integrity Platform</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="logout()" title="Sign Out">
+        <i class="ag-icon ag-box-arrow-right"></i>
+        <span class="btn-logout-text">Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+    <div class="page-header">
+      <div>
+        <h2>AI Model Training</h2>
+        <p>Annotate submissions to build training data, then retrain the AI detection model.</p>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- Data Summary Section -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header d-flex justify-content-between align-items-center">
+          <span><i class="ag-icon ag-database me-2"></i>Training Data Summary</span>
+          <span class="badge bg-primary bg-opacity-10 text-primary" id="readiness-badge">—</span>
+        </div>
+        <div class="p-4">
+          <div class="metrics-grid mb-4">
+            <div class="metric-card metric-card--primary p-3">
+              <div class="metric-label">Total Annotations</div>
+              <div class="metric-value fs-3" id="total-annotations"><div class="skeleton-loader" style="width: 60px; height: 35px;"></div></div>
+            </div>
+            <div class="metric-card metric-card--success p-3">
+              <div class="metric-label">Human Samples</div>
+              <div class="metric-value fs-3" id="human-count"><div class="skeleton-loader" style="width: 60px; height: 35px;"></div></div>
+            </div>
+            <div class="metric-card metric-card--danger p-3">
+              <div class="metric-label">AI Samples</div>
+              <div class="metric-value fs-3" id="ai-count"><div class="skeleton-loader" style="width: 60px; height: 35px;"></div></div>
+            </div>
+            <div class="metric-card metric-card--info p-3">
+              <div class="metric-label">Min Required</div>
+              <div class="metric-value fs-3" id="min-required"><div class="skeleton-loader" style="width: 60px; height: 35px;"></div></div>
+            </div>
+          </div>
+
+          <!-- Class balance bar -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="d-inline-flex align-items-center gap-1.5 text-success fw-bold small">
+                <i class="ag-icon ag-person-check"></i>
+                <span>Human</span>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0.5 font-monospace" id="human-pct-label">--%</span>
+              </span>
+              <span class="d-inline-flex align-items-center gap-1.5 text-danger fw-bold small">
+                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-0.5 font-monospace" id="ai-pct-label">--%</span>
+                <span>AI</span>
+                <i class="ag-icon ag-robot"></i>
+              </span>
+            </div>
+            <div class="class-bar">
+              <div class="class-bar-fill bg-success" id="human-bar" style="width:50%"></div>
+              <div class="class-bar-fill bg-danger" id="ai-bar" style="width:50%"></div>
+            </div>
+          </div>
+
+          <!-- Label distribution -->
+          <div id="label-detail" class="d-flex gap-2 flex-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Training Controls -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header">
+          <i class="ag-icon ag-gear me-2"></i>Training Controls
+        </div>
+        <div class="p-4 text-center">
+          <div class="mb-3">
+            <button class="train-btn" id="train-btn" onclick="startTraining()" disabled>
+              <i class="ag-icon ag-play-fill me-2"></i>Train Model
+            </button>
+          </div>
+          <p class="text-muted small mb-0" id="train-hint">
+            Need more annotated data before training can begin.
+          </p>
+
+          <!-- Training progress -->
+          <div class="training-progress mt-4 mx-auto" id="training-progress" style="max-width:500px">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
+              <span class="fw-bold" id="training-status-text">Training in progress…</span>
+            </div>
+            <div class="progress" style="height:10px; border-radius:5px">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="training-progress-bar" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Training result -->
+          <div class="mt-4 d-none" id="training-result">
+            <div class="alert alert-success d-flex align-items-center gap-3">
+              <i class="ag-icon ag-check-circle-fill fs-3"></i>
+              <div class="text-start">
+                <h6 class="mb-1 fw-bold">Training Complete!</h6>
+                <p class="mb-0 small" id="training-result-text">—</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Model -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header d-flex justify-content-between align-items-center">
+          <span><i class="ag-icon ag-lightning-charge me-2"></i>Active Model</span>
+          <span class="badge bg-success active-badge px-3 py-2" id="active-model-badge">—</span>
+        </div>
+        <div class="p-4">
+          <div class="row g-3" id="active-model-metrics">
+            <div class="col text-center">
+              <div class="fw-bold fs-4" id="active-roc-auc">—</div>
+              <small class="text-muted">ROC-AUC</small>
+            </div>
+            <div class="col text-center">
+              <div class="fw-bold fs-4" id="active-accuracy">—</div>
+              <small class="text-muted">Accuracy</small>
+            </div>
+            <div class="col text-center">
+              <div class="fw-bold fs-4" id="active-f1">—</div>
+              <small class="text-muted">F1 Score</small>
+            </div>
+            <div class="col text-center">
+              <div class="fw-bold fs-4" id="active-samples">—</div>
+              <small class="text-muted">Samples</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training History -->
+      <div class="ag-card">
+        <div class="ag-card-header"><i class="ag-icon ag-clock-history me-2"></i>Training History</div>
+        <div class="table-responsive">
+          <table class="table ag-table mb-0" aria-label="Model Training History Log Table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Samples</th>
+                <th>ROC-AUC</th>
+                <th>Accuracy</th>
+                <th>F1</th>
+                <th>Active</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr>
+                <td><div class="skeleton-loader" style="width: 80px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 100px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 50px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 50px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 50px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 50px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 80px; height: 20px;"></div></td>
+                <td><div class="skeleton-loader" style="width: 80px; height: 20px;"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js?v=2.1"></script>
+<script src="/js/ui.js?v=2.1"></script>
+<script src="/js/auth.js?v=2.1"></script>
+<script src="/js/sidebar.js?v=2.1"></script>
+<script src="/js/training.js?v=2.1"></script>
+</body>
+</html>

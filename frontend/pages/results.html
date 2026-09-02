@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="All analysis batches and results | AcademicGuard academic integrity platform."/>
+  <title>Batches & Results | AcademicGuard</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/icons.css">
+    <link rel="stylesheet" href="/css/main.css?v=4.1"/>
+  <link rel="stylesheet" href="/css/dashboard.css?v=4.1"/>
+  <link rel="stylesheet" href="/css/skeleton_loading.css"/>
+  <script>
+    (function() {
+      const t = localStorage.getItem('ag-theme') || localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+</head>
+<body data-page="results">
+
+<!-- Navbar -->
+<nav class="navbar navbar-ag px-4 d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center gap-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-logo">
+        <i class="ag-icon ag-shield-check"></i>
+      </div>
+      <a href="/pages/dashboard.html" class="navbar-brand text-decoration-none">
+        AcademicGuard
+      </a>
+    </div>
+
+    <!-- Center Nav Tabs -->
+    <div class="top-nav-tabs d-none d-md-flex align-items-center gap-1 ms-2">
+      <a href="/pages/dashboard.html" class="top-nav-tab">
+        <i class="ag-icon ag-house-door"></i> Dashboard
+      </a>
+      <a href="/pages/results.html" class="top-nav-tab active">
+        <i class="ag-icon ag-file-earmark-text"></i> Reports
+      </a>
+      <a href="/pages/settings.html" class="top-nav-tab">
+        <i class="ag-icon ag-gear"></i> Settings
+      </a>
+      <a href="javascript:void(0)" class="top-nav-tab" onclick="UI.showToast('AcademicGuard | Enterprise Integrity Platform', 'info')">
+        <i class="ag-icon ag-question-circle"></i> Support
+      </a>
+    </div>
+  </div>
+
+  <div class="navbar-actions d-flex align-items-center gap-3">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <i class="ag-icon ag-moon-fill" id="theme-icon"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-link text-muted p-0 d-none d-sm-block position-relative" title="Notifications" aria-label="Notifications" onclick="UI.showToast('All analysis systems operating normally.', 'success')">
+      <i class="ag-icon ag-bell fs-5"></i>
+    </button>
+    
+    <!-- User Dropdown with Role and Sign Out -->
+    <div class="dropdown">
+      <div class="d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+        <div class="user-avatar-small rounded-circle d-flex align-items-center justify-content-center fw-bold" id="user-avatar-initials" style="width: 36px; height: 36px; background: var(--ag-primary-soft); color: var(--ag-primary); font-size: 0.9rem;">
+          <i class="ag-icon ag-person-fill"></i>
+        </div>
+        <div class="d-none d-lg-block text-start">
+          <div class="fw-semibold text-truncate" id="nav-username" style="max-width: 140px; font-size: 0.85rem;">User</div>
+          <span class="badge bg-primary bg-opacity-10 text-primary" id="nav-userrole" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Instructor</span>
+        </div>
+        <i class="ag-icon ag-chevron-down text-muted small ms-1"></i>
+      </div>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary border-opacity-25 mt-2" style="background: var(--ag-card-bg); min-width: 210px; z-index: 1050;">
+        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+          <div class="fw-bold text-truncate" id="dropdown-user-name">Loading...</div>
+          <div class="small text-muted" id="dropdown-user-role">Role</div>
+        </li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/dashboard.html"><i class="ag-icon ag-grid-1x2"></i> Dashboard</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/results.html"><i class="ag-icon ag-bar-chart-steps"></i> All Batches</a></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/pages/settings.html"><i class="ag-icon ag-gear"></i> Settings</a></li>
+        <li id="dropdown-admin-item" style="display: none;"><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning fw-semibold" href="/pages/admin.html"><i class="ag-icon ag-shield-lock-fill"></i> Admin Panel (RBAC)</a></li>
+        <li><hr class="dropdown-divider my-1 border-secondary border-opacity-25"></li>
+        <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="ag-icon ag-box-arrow-right"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Toggle -->
+<button class="sidebar-toggle d-lg-none" id="sidebar-toggle" aria-label="Toggle menu">
+  <i class="ag-icon ag-list"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="dashboard-layout">
+  <aside class="sidebar" id="sidebar">
+    <!-- User Profile Section -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <div class="user-avatar" id="sidebar-avatar">AG</div>
+        <span class="user-status-dot" title="Active"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">User</div>
+        <span class="user-role-badge instructor" id="sidebar-role-badge">Instructor</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/pages/dashboard.html" data-tooltip="Dashboard">
+          <i class="ag-icon ag-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="/pages/upload.html" data-tooltip="New Analysis">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+        <a class="nav-link active" href="/pages/results.html" data-tooltip="All Batches">
+          <i class="ag-icon ag-bar-chart-steps"></i>
+          <span>All Batches</span>
+        </a>
+        <a class="nav-link" href="/pages/training.html" data-tooltip="Model Training">
+          <i class="ag-icon ag-cpu"></i>
+          <span>Model Training</span>
+        </a>
+        <a class="nav-link" href="/pages/annotate.html" data-tooltip="Annotate Submissions">
+          <i class="ag-icon ag-pencil-square"></i>
+          <span>Annotate Submissions</span>
+        </a>
+        <a class="nav-link" href="/pages/settings.html" data-tooltip="Settings">
+          <i class="ag-icon ag-gear"></i>
+          <span>Settings</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link" href="/pages/admin.html" id="sidebar-admin-link" data-tooltip="User Management (RBAC)" style="display: none;">
+          <i class="ag-icon ag-people-fill"></i>
+          <span>User Management</span>
+          <span class="nav-badge">Admin</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="sidebar-actions">
+      <a href="/pages/upload.html" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="ag-icon ag-plus-lg"></i>
+        <span>New Analysis</span>
+      </a>
+    </div>
+
+    <!-- Help Card -->
+    <div class="sidebar-help">
+      <div class="help-card">
+        <i class="ag-icon ag-shield-check"></i>
+        <div class="help-content">
+          <p class="help-title">AcademicGuard</p>
+          <p class="help-link">Integrity Platform</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="logout()" title="Sign Out">
+        <i class="ag-icon ag-box-arrow-right"></i>
+        <span class="btn-logout-text">Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+    <!-- Loading / error states -->
+    <div id="error-message" class="alert alert-danger" style="display:none"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW A: ALL BATCHES LIST                                           -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="all-batches-view" style="display: none;">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+          <h2 class="fw-bold mb-1">Analysis Batches</h2>
+          <p class="text-muted mb-0">Browse and inspect past batch plagiarism, AI detection, and AST code audits</p>
+        </div>
+        <a href="/pages/upload.html" class="btn btn-primary d-flex align-items-center gap-2">
+          <i class="ag-icon ag-plus-circle"></i>
+          <span>New Analysis</span>
+        </a>
+      </div>
+
+      <!-- Filters and Search Bar -->
+      <div class="glass-panel p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 400px;">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0"><i class="ag-icon ag-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" id="batch-search" placeholder="Search by batch name or course code…">
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <select class="form-select" aria-label="Select an option" id="batch-status-filter" style="width: auto;">
+            <option value="all">All Statuses</option>
+            <option value="done">Completed</option>
+            <option value="processing">Processing</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Batches Table Card -->
+      <div class="ag-card p-0 overflow-hidden">
+        <div class="table-responsive">
+          <table class="table ag-table mb-0" id="all-batches-table" aria-label="All Analysis Batches Table">
+            <thead>
+              <tr>
+                <th class="ps-4">Batch Name</th>
+                <th>Course</th>
+                <th>Submissions</th>
+                <th>Status</th>
+                <th>Uploaded Date</th>
+                <th style="text-align: right;" class="pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="all-batches-tbody">
+              <!-- Populated dynamically by results.js -->
+            </tbody>
+          </table>
+        </div>
+        <div id="no-batches-state" class="empty-state my-5" style="display: none;">
+          <div class="empty-state-icon">
+            <i class="ag-icon ag-folder2-open"></i>
+          </div>
+          <h4>No Batches Found</h4>
+          <p>You haven't uploaded any PDF assignment batches yet. Upload a batch of student submissions to run Enterprise-grade similarity and AI integrity checks.</p>
+          <a href="/pages/upload.html" class="btn btn-primary mt-2">
+            <i class="ag-icon ag-plus-circle"></i>
+            <span>Upload Your First Batch</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW B: SINGLE BATCH RESULTS & HEATMAP                             -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="single-batch-view" style="display: none;">
+      <!-- Back Button & Batch Header -->
+      <div class="mb-3">
+        <a href="/pages/results.html" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 mb-2">
+          <i class="ag-icon ag-arrow-left"></i> All Batches
+        </a>
+      </div>
+
+      <div id="results-header" class="mb-4">
+        <div class="page-header align-items-center">
+          <div>
+            <h2 id="batch-name">—</h2>
+            <p class="text-muted mb-2">
+              <span id="batch-course"></span> &bull; 
+              Uploaded <span id="batch-date"></span> &bull; 
+              <span id="submission-count">—</span> submissions
+            </p>
+            <div>
+              <span id="batch-status-badge" class="badge-risk fs-6" style="padding: 0.25rem 0.75rem"></span>
+            </div>
+          </div>
+          <div class="export-btn-group d-flex gap-2 flex-wrap" id="export-buttons">
+            <a id="annotate-btn" href="#" class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2">
+              <i class="ag-icon ag-pencil-square"></i>
+              <span>Annotate</span>
+            </a>
+            <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" id="export-json-btn" onclick="exportBatch('json')">
+              <i class="ag-icon ag-file-earmark-code"></i>
+              <span>JSON</span>
+            </button>
+            <button class="btn btn-outline-info btn-sm d-flex align-items-center gap-2" id="export-csv-btn" onclick="exportBatch('csv')">
+              <i class="ag-icon ag-file-earmark-text"></i>
+              <span>CSV</span>
+            </button>
+            <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-2" id="export-excel-btn" onclick="exportBatch('excel')">
+              <i class="ag-icon ag-file-earmark-excel"></i>
+              <span>Excel</span>
+            </button>
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" id="pdf-preview-btn">
+              <i class="ag-icon ag-file-earmark-pdf"></i>
+              <span>Batch Audit PDF</span>
+            </button>
+            <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" id="delete-batch-btn">
+              <i class="ag-icon ag-trash"></i>
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      <!-- Automated AI & Similarity Insight Cards Container -->
+      <div id="automated-insights-container" class="mb-4"></div>
+
+      <!-- Disclaimer (Section 6.1 — Legal and Ethical Requirements) -->
+      <div class="disclaimer-banner mb-4 glass-panel d-flex align-items-center p-3">
+        <div class="bg-warning bg-opacity-10 p-2 rounded-3 me-3 text-warning">
+          <i class="ag-icon ag-shield-exclamation fs-3"></i>
+        </div>
+        <div>
+          <h6 class="mb-1 fw-bold">Academic Integrity Advisory & Ethical Decision-Making</h6>
+          <p class="mb-0 text-muted small">
+            AcademicGuard provides statistical probability indicators (Perplexity, Burstiness, AST Code Similarity, Dense Semantic Embeddings). 
+            These scores serve as advisory evidence to support, rather than replace, human pedagogical review. 
+            Instructors are required to conduct an independent evaluation before initiating formal academic misconduct proceedings.
+          </p>
+        </div>
+      </div>
+
+      <!-- FR-DASH-02 Top Similar Peer Submissions -->
+      <div class="ag-card mb-4">
+        <div class="ag-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ag-icon ag-list-stars text-primary"></i>
+            <span class="fw-bold">Top Similar Peer Submissions</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <small class="text-muted">Ranked by pairwise semantic &amp; text similarity match</small>
+          </div>
+        </div>
+        
+        <!-- Top Pairs List Container -->
+        <div id="heatmap-pairs-container" style="display: block; padding: 1.25rem;">
+          <!-- Populated dynamically by results.js -->
+        </div>
+      </div>
+
+      <!-- FR-DASH-03 Risk ranking table with Smart Triage Toolbar -->
+      <div class="ag-card">
+        <div class="ag-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <span>Risk Ranking (Click a row for details)</span>
+          <div class="d-flex align-items-center gap-2" id="triage-toolbar">
+            <span class="badge bg-secondary bg-opacity-20 text-muted border border-secondary border-opacity-25 small me-2 d-none d-md-inline">Shortcuts: <kbd>J</kbd> <kbd>K</kbd> nav | <kbd>X</kbd> select | <kbd>A</kbd> approve | <kbd>D</kbd> deduct</span>
+            <button class="btn btn-sm btn-outline-success" id="bulk-approve-btn" onclick="bulkResolveSelected('approve')" disabled>Approve Selected</button>
+            <button class="btn btn-sm btn-outline-danger" id="bulk-deduct-btn" onclick="bulkResolveSelected('deduct')" disabled>Deduct Selected</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table ag-table risk-table mb-0" aria-label="Student Risk Assessment Ranking Table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Risk Level</th>
+                <th>Weighted Score</th>
+                <th>AI Prob.</th>
+                <th>Text Sim.</th>
+                <th>Code Sim.</th>
+                <th>Marks</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="risk-table-body">
+              <!-- Populated by results.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- D3.js (FR-DASH-02) -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/heatmap.js"></script>
+<script type="module">
+  import { InsightEngine } from '/js/insight_engine.js';
+  window.InsightEngine = InsightEngine;
+</script>
+<script src="/js/export.js?v=4.1"></script>
+<script src="/js/results.js?v=4.1"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+AcademicGuard — Official Demo & Repository Links
+Blockchain Olympiad Bangladesh (BCOLBD) 2026 — Artificial Intelligence Category (AInspire)
+
+Project Title: AcademicGuard: A High-Throughput, Privacy-Preserving Machine Learning Architecture for Multi-Modal Academic Integrity and Code Forensics
+Team Name: AcademicGuard
+Team ID: 6a7f5c7d71ee7
+Institution: Department of CSE, University of Information Technology and Sciences (UITS), Dhaka, Bangladesh
+
+================================================================================
+1. LIVE INTERACTIVE DEMO & API ENDPOINTS
+================================================================================
+- Frontend Application URL : http://localhost:8080 (or hosted staging server)
+- Interactive API Swagger Docs : http://localhost:8000/api/docs
+- ReDoc Technical Reference  : http://localhost:8000/api/redoc
+- Health Check Endpoint      : http://localhost:8000/api/health
+
+================================================================================
+2. DEMO USER CREDENTIALS (PRE-SEEDED)
+================================================================================
+Role: System Administrator (Full Instructor & Admin Privileges)
+Email: admin@academicguard.ai
+Password: Password123!
+(Authentication uses secure HttpOnly JWT cookies. Instructors can also register new accounts freely via /pages/register.html)
+
+================================================================================
+3. INSTANT REPRODUCIBLE INFERENCE RUNNER
+================================================================================
+Evaluators can test and verify all AI models (GPT-2 Perplexity, Sentence Burstiness,
+Stylometry, ESL Banding, AST Code Forensics, and Dynamic Risk Scoring) in 5 seconds
+without setting up PostgreSQL or Redis:
+
+$ python3 quick_inference_demo.py
+
+================================================================================
+4. SOURCE CODE & REPOSITORY ACCESS
+================================================================================
+- Repository Package: AcademicGuard_TD & CR.zip
+- GitHub / Code Archive: https://github.com/academicguard-ai/academicguard (or institutional mirror)
